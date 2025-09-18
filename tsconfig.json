@@ -17,4 +17,22 @@
     "jsx": "react-jsx"
   },
   "include": ["src"]
+
 } 
+
+Initiative / Project Name,Lead Organization,Primary Objective,Source / Link,R Org/PoC,Type of Engagement,Relevance
+RDF 1.1 (Resource Description Framework),W3C,"Data model for triples, graph-based data interchange",https://www.w3.org/TR/rdf11-concepts/,,Adopt/Conform; Modeling & data exchange,Foundation for knowledge graphs; required for SPARQL/OWL
+OWL 2 (Web Ontology Language),W3C,Ontology modeling with formal semantics for reasoning,https://www.w3.org/TR/owl2-overview/,,Adopt/Conform; Ontology development,Core for formal ontologies; reasoner compatibility
+SPARQL 1.1,W3C,Query and update language for RDF graphs,https://www.w3.org/TR/sparql11-query/,,Adopt/Conform; Query layer,Standard query interface for triplestores and KG APIs
+SHACL (Shapes Constraint Language),W3C,Validation and constraint checking over RDF data,https://www.w3.org/TR/shacl/,,Adopt/Conform; Data quality & governance,Validate KG data; enforce schemas and business rules
+R2RML (RDB to RDF Mapping Language),W3C,Standard mappings from relational data to RDF,https://www.w3.org/TR/r2rml/,,Adopt/Conform; Data integration,Pipeline from enterprise RDBs to KG; virtualization
+SKOS (Simple Knowledge Organization System),W3C,"Controlled vocabularies, taxonomies, thesauri in RDF",https://www.w3.org/TR/skos-reference/,,Adopt/Conform; Vocabulary governance,Lightweight concept schemes; complements OWL
+PROV (W3C PROV),W3C,Provenance data model and ontology for traceability,https://www.w3.org/TR/prov-o/,,Adopt/Conform; Lineage & audit,Essential for traceable digital thread and MBE
+BFO (Basic Formal Ontology) – ISO/IEC 21838-2,ISO/IEC JTC 1,Upper ontology providing high-level categories,https://www.iso.org/standard/82487.html,,Adopt/Align; Upper ontology governance,Enterprise-wide semantic alignment; ontology hub
+IOF Core (Industrial Ontology Foundry),IOF (community consortium),Core and domain ontologies for industrial ecosystems,https://www.industrialontologies.org/,,Adopt/Align/Contribute; Domain modeling,Industry-focused ontologies for manufacturing & supply chain
+OMG ODM (Ontology Definition Metamodel),OMG,Metamodel and UML profiles for ontology representation,https://www.omg.org/spec/ODM/,,Evaluate/Align; Tool interoperability,Bridges UML/MBSE tools and ontologies
+ANSI/DMSC QIF (Quality Information Framework),DMSC (ANSI),Standard for metrology and quality data interoperability,https://qifstandards.org/,,Adopt/Integrate; Manufacturing quality data,Connects inspection/measurement to KG via RDF/OWL mappings
+ISO 15926 (Industrial automation systems),ISO TC184/SC4,Reference data for process plants lifecycle integration,https://www.iso.org/standard/41322.html,,Adopt/Map; Asset & lifecycle semantics,Industrial asset ontology alignment and exchange
+W3C RDF-star / SPARQL-star (emerging/1.2),W3C,Statement-level annotation of RDF triples,https://www.w3.org/groups/wg/rdf-star/,,Monitor/Early adopt; Reification alternative,Attach provenance/metadata to edges in KGs
+ISO/IEC 24707 (Common Logic),ISO/IEC JTC 1,Framework for logic-based knowledge interchange,https://www.iso.org/standard/66249.html,,Evaluate/Align; Formal logic foundations,Interoperability across logic formalisms
+Graph Query Language (GQL) – ISO/IEC 39075,ISO/IEC JTC 1 SC32,Property-graph query language standard,https://www.iso.org/standard/76567.html,,Monitor/Integrate; Polyglot graph architecture,Bridges KG (RDF) with property-graph systems
