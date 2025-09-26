@@ -20,25 +20,3 @@
 
 } 
 }
-
-Mobi 4.2: The RTX Knowledge Graph Launchpad
-The recent upgrade to Mobi 4.2 marks a evolution for our data and ontology capabilities at RTX. What was once the central repository for our ontologies has now become a powerful, self-service launchpad for any team to build and test end-to-end knowledge graph solutions.
-This transformation bridges the critical gap between designing a data model and proving its value, accelerating our ability to turn complex data into actionable intelligence.
-From Repository to All-in-One Platform
-With a community of 244 users across the enterprise, Mobi has proven its value as a collaborative hub. Our recent platform analytics reveal a key trend: Mobi is not a static library but a dynamic workshop. The majority of platform activities are creation events, new ontologies, new mappings, and new datasets—demonstrating that teams are actively building the future of our data infrastructure.
-The release of Mobi 4.2 expands this capability. Teams can now perform the entire proof-of-concept (POC) lifecycle in a single, unified environment.
-What This Means for RTX Teams
-Mobi’s new features deliver an end-to-end workflow for kickstarting knowledge graph initiatives:
-•	Unified Platform: Mobi remains the go-to, authoritative source for all RTX ontologies. This ensures consistency and allows teams to build on a shared, collaborative foundation.
-•	Complete End-to-End Capability:
-o	Design: Intuitively build and manage complex ontologies.
-o	Build: Leverage improved data mapping tools to ingest data and construct knowledge graphs directly within the platform, which functions as a native RDF Triplestore.
-o	Query: Immediately analyze and validate your graph using a full-featured SPARQL endpoint.
-•	Powerful, Scalable, and Ready for Integration:
-o	The built-in triplestore is robust, capable of handling POCs up to 50 GB (approx. 500 million triples) per project.
-o	A full REST API ensures that any solution built in Mobi can be seamlessly integrated with other applications, analytics platforms, or BI tools from day one.
-Low-Risk Innovation with a Clear Path to Production
-This is a game-changer for innovation at RTX. Teams can now get started on knowledge graph projects immediately with zero initial tool costs.
-Once a POC is successful and its value is proven, Mobi provides an established and de-risked transition path. With established connectors to enterprise-grade systems like Anzo,  Jena Fuseki, Kobai, and Stardog, scaling a project from a successful prototype to a production-grade application is a smooth, predictable process.
-Mobi is the fastest, most cost-effective way for any team at RTX to start building and proving the value of a knowledge graph.
-
