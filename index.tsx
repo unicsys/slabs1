@@ -36,40 +36,40 @@ root.render(
 
 Discovery Summary – Axon & Informatica EDC
 
-As part of my role in the MBDT PCC corporate team, I worked closely with Ken (DT team), who provided critical insights into the capabilities of Informatica Axon and the Enterprise Data Catalog (EDC). His guidance was instrumental in understanding how these platforms function, how data flows into them, and how metadata can be structured and governed effectively.
+As part of my role with the MBDT PCC corporate team, I had the opportunity to work closely with Ken from the DT team, who provided invaluable insights into Informatica Axon and Enterprise Data Catalog (EDC). His guidance helped me gain both a foundational and practical understanding of these platforms, which is essential for exploring ontology integration and strengthening data governance.
 
-Key Learnings from Ken’s Guidance
+Key Learnings from Ken’s Support
 
 Axon
 
 How data and databases are ingested and represented.
 
-Creating and enriching metadata through links, descriptions, URLs, and diagrams.
+Creation and enrichment of metadata (links, descriptions, URLs, diagrams).
 
-Building glossaries and attributes, and using dashboards for visibility.
+Business glossary concepts: how attributes and dashboards are built, and how search works.
 
-Practical demonstrations of search and navigation capabilities.
+Practical examples of glossary creation and governance workflows.
 
-Enterprise Data Catalog (EDC)
+EDC (Enterprise Data Catalog)
 
-How EDC scans data sources and captures metadata, lineage, and relationships.
+How scanning works: ingestion of technical metadata, lineage capture, and relationship discovery.
 
-Creating terms, attaching URLs/diagrams, importing templates, and performing bulk uploads.
+Creating and managing terms, attaching URLs/diagrams, and importing templates.
 
-Exporting metadata from both Axon and EDC for reuse and integration.
+Bulk metadata upload and export processes.
 
-Impact on Discovery
+How EDC and Axon integrate through glossary-term associations and metadata linking.
 
-This discovery effort clarified where ontologies can add significant value:
+Value of the Discovery
 
-Making data findable for non-expert users through standardized semantics.
+Ken’s walkthroughs and resources clarified:
 
-Reducing dependency on tribal knowledge by aligning terminology across sources.
+How attributes, columns, and glossary terms are managed across Axon and EDC.
 
-Enabling AI/ML teams to leverage structured metadata for advanced use cases such as digital twins.
+Where ontologies can add value: making data findable for non-experts, reducing reliance on tribal knowledge, and enabling consistency in terminology.
 
-Identifying integration opportunities between ontology frameworks, Axon, and EDC to enhance governance workflows.
+The path forward: integrating ontology frameworks with Axon/EDC to enable semantic search, automated governance, and improved support for advanced use cases like digital twins.
 
 Outcome
 
-The sessions with Ken provided a comprehensive understanding of Axon and EDC, highlighted the scope of potential integration with ontologies, and outlined a path forward for creating a scalable, semantically enriched data governance framework at RTX.
+This discovery effort gave me a clear understanding of the scope and mechanics of Axon and EDC, highlighted opportunities for ontology-driven enrichment, and provided a practical foundation for defining the next steps in our semantic data governance strategy. Ken’s expertise and continued sharing of resources were instrumental in shaping this understanding.
