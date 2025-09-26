@@ -44,4 +44,3 @@
 } 
 }
 
-SML is a YAML-based semantic modeling language for the analytics/BI world. Unlike RDF/OWL ontologies that focus on formal knowledge representation, SML defines business-friendly metrics, dimensions, and relationships on top of data warehouses—basically a semantic layer spec similar to LookML or Power BI models.
