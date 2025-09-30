@@ -47,3 +47,11 @@ export const ConnectorLine: React.FC<ConnectorLineProps> = ({
 
 }; 
 };
+
+PREFIX ockms: <https://ontologyhub.rtx.com/RTXEnterpriseOntologies/OCKMSDigitalThreadOntology#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+SELECT ?instance
+WHERE {
+    ?instance rdf:type ockms:CircuitCardAssemblyIdentifier .
+}
