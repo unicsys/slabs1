@@ -88,24 +88,20 @@
                     <tr>
                         <th>Operator</th>
                         <th>Aircraft</th>
-                        <th>R_Date</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td data-node="JohnDoe">John Doe</td>
                         <td data-node="N737AA">Aircraft N737AA</td>
-                        <td data-node="Date-01">1-Jan-25</td>
                     </tr>
                     <tr>
                         <td data-node="JaneSmith">Jane Smith</td>
                         <td data-node="N905FR">Aircraft N905FR</td>
-                        <td data-node="Date-02">1-Feb-25</td>
                     </tr>
                     <tr>
                         <td data-node="JohnDoe">John Doe</td>
                         <td data-node="N905FR">Aircraft N905FR</td>
-                        <td data-node="Date-03">1-Mar-25</td>
                     </tr>
                 </tbody>
             </table>
@@ -135,8 +131,7 @@
             {"color": "#FDD4A0", "font": {"color": "black"}, "id": "Occurrent", "label": "Occurrent", "shape": "box", "size": 25, "title": "Something that happens over time (e.g., a process)."},
             {"color": "#FFA500", "font": {"color": "black"}, "id": "Aircraft", "label": "Aircraft", "shape": "box", "size": 20, "title": "Our Class for aircraft."},
             {"color": "#FFA500", "font": {"color": "black"}, "id": "Person", "label": "Person", "shape": "box", "size": 20, "title": "Our Class for people."},
-            {"color": "#FFA500", "font": {"color": "black"}, "id": "RepairProcess", "label": "RepairProcess", "shape": "box", "size": 20, "title": "Our Class for repair events."},
-            {"color": "#FFA500", "font": {"color": "black"}, "id": "TimeInterval", "label": "TimeInterval", "shape": "box", "size": 20, "title": "Our Class for time intervals."}
+            {"color": "#FFA500", "font": {"color": "black"}, "id": "RepairProcess", "label": "RepairProcess", "shape": "box", "size": 20, "title": "Our Class for repair events."}
         ]);
         
         var ontologyEdges = new vis.DataSet([
@@ -145,10 +140,8 @@
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Aircraft", "label": "rdfs:subClassOf", "to": "Continuant"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Person", "label": "rdfs:subClassOf", "to": "Continuant"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "RepairProcess", "label": "rdfs:subClassOf", "to": "Occurrent"},
-            {"arrows": "to", "color": "#808080", "dashes": true, "from": "TimeInterval", "label": "rdfs:subClassOf", "to": "Occurrent"},
             {"arrows": "to", "color": "#DC143C", "from": "RepairProcess", "label": "has_participant", "to": "Aircraft", "width": 2},
-            {"arrows": "to", "color": "#DC143C", "from": "RepairProcess", "label": "has_participant", "to": "Person", "width": 2},
-            {"arrows": "to", "color": "#228B22", "from": "RepairProcess", "label": "occurs_on", "to": "TimeInterval", "width": 2}
+            {"arrows": "to", "color": "#DC143C", "from": "RepairProcess", "label": "has_participant", "to": "Person", "width": 2}
         ]);
 
         // Knowledge Graph nodes (classes + instances)
@@ -159,17 +152,13 @@
             {"color": "#FFA500", "font": {"color": "black"}, "id": "Aircraft", "label": "Aircraft", "shape": "box", "size": 20, "title": "Our Class for aircraft."},
             {"color": "#FFA500", "font": {"color": "black"}, "id": "Person", "label": "Person", "shape": "box", "size": 20, "title": "Our Class for people."},
             {"color": "#FFA500", "font": {"color": "black"}, "id": "RepairProcess", "label": "RepairProcess", "shape": "box", "size": 20, "title": "Our Class for repair events."},
-            {"color": "#FFA500", "font": {"color": "black"}, "id": "TimeInterval", "label": "TimeInterval", "shape": "box", "size": 20, "title": "Our Class for time intervals."},
             {"color": "#8A2BE2", "font": {"color": "black"}, "id": "N737AA", "label": "Aircraft N737AA", "shape": "dot", "size": 25},
             {"color": "#8A2BE2", "font": {"color": "black"}, "id": "JohnDoe", "label": "John Doe", "shape": "dot", "size": 20},
-            {"color": "#8A2BE2", "font": {"color": "black"}, "id": "Repair-01", "label": "Repair-01", "shape": "dot", "size": 20, "title": "Repair event 01"},
+            {"color": "#8A2BE2", "font": {"color": "black"}, "id": "Repair-01", "label": "Repair-01", "shape": "dot", "size": 20},
             {"color": "#8A2BE2", "font": {"color": "black"}, "id": "N905FR", "label": "Aircraft N905FR", "shape": "dot", "size": 25},
             {"color": "#8A2BE2", "font": {"color": "black"}, "id": "JaneSmith", "label": "Jane Smith", "shape": "dot", "size": 20},
-            {"color": "#8A2BE2", "font": {"color": "black"}, "id": "Repair-02", "label": "Repair-02", "shape": "dot", "size": 20, "title": "Repair event 02"},
-            {"color": "#8A2BE2", "font": {"color": "black"}, "id": "Repair-03", "label": "Repair-03", "shape": "dot", "size": 20, "title": "Repair event 03"},
-            {"color": "#9370DB", "font": {"color": "black"}, "id": "Date-01", "label": "1-Jan-25", "shape": "dot", "size": 20, "title": "Time interval: 1-Jan-25"},
-            {"color": "#9370DB", "font": {"color": "black"}, "id": "Date-02", "label": "1-Feb-25", "shape": "dot", "size": 20, "title": "Time interval: 1-Feb-25"},
-            {"color": "#9370DB", "font": {"color": "black"}, "id": "Date-03", "label": "1-Mar-25", "shape": "dot", "size": 20, "title": "Time interval: 1-Mar-25"}
+            {"color": "#8A2BE2", "font": {"color": "black"}, "id": "Repair-02", "label": "Repair-02", "shape": "dot", "size": 20},
+            {"color": "#8A2BE2", "font": {"color": "black"}, "id": "Repair-03", "label": "Repair-03", "shape": "dot", "size": 20}
         ]);
         
         var kgEdges = new vis.DataSet([
@@ -178,7 +167,6 @@
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Aircraft", "label": "is a", "to": "Continuant"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Person", "label": "is a", "to": "Continuant"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "RepairProcess", "label": "is a", "to": "Occurrent"},
-            {"arrows": "to", "color": "#808080", "dashes": true, "from": "TimeInterval", "label": "is a", "to": "Occurrent"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "N737AA", "label": "is a", "title": "rdf:type", "to": "Aircraft"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "JohnDoe", "label": "is a", "title": "rdf:type", "to": "Person"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Repair-01", "label": "is a", "title": "rdf:type", "to": "RepairProcess"},
@@ -186,18 +174,12 @@
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "JaneSmith", "label": "is a", "title": "rdf:type", "to": "Person"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Repair-02", "label": "is a", "title": "rdf:type", "to": "RepairProcess"},
             {"arrows": "to", "color": "#808080", "dashes": true, "from": "Repair-03", "label": "is a", "title": "rdf:type", "to": "RepairProcess"},
-            {"arrows": "to", "color": "#808080", "dashes": true, "from": "Date-01", "label": "is a", "title": "rdf:type", "to": "TimeInterval"},
-            {"arrows": "to", "color": "#808080", "dashes": true, "from": "Date-02", "label": "is a", "title": "rdf:type", "to": "TimeInterval"},
-            {"arrows": "to", "color": "#808080", "dashes": true, "from": "Date-03", "label": "is a", "title": "rdf:type", "to": "TimeInterval"},
             {"arrows": "to", "color": "#DC143C", "from": "Repair-01", "label": "has_participant", "to": "N737AA", "width": 2},
             {"arrows": "to", "color": "#DC143C", "from": "Repair-01", "label": "has_participant", "to": "JohnDoe", "width": 2},
             {"arrows": "to", "color": "#DC143C", "from": "Repair-02", "label": "has_participant", "to": "N905FR", "width": 2},
             {"arrows": "to", "color": "#DC143C", "from": "Repair-02", "label": "has_participant", "to": "JaneSmith", "width": 2},
             {"arrows": "to", "color": "#DC143C", "from": "Repair-03", "label": "has_participant", "to": "N905FR", "width": 2},
-            {"arrows": "to", "color": "#DC143C", "from": "Repair-03", "label": "has_participant", "to": "JohnDoe", "width": 2},
-            {"arrows": "to", "color": "#228B22", "from": "Repair-01", "label": "occurs_on", "to": "Date-01", "width": 2},
-            {"arrows": "to", "color": "#228B22", "from": "Repair-02", "label": "occurs_on", "to": "Date-02", "width": 2},
-            {"arrows": "to", "color": "#228B22", "from": "Repair-03", "label": "occurs_on", "to": "Date-03", "width": 2}
+            {"arrows": "to", "color": "#DC143C", "from": "Repair-03", "label": "has_participant", "to": "JohnDoe", "width": 2}
         ]);
 
         var options = {
