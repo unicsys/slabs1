@@ -1,1 +1,21 @@
-This project focuses on developing and validating robust digital twin models for a complex aeroelastic system. These models are designed to accurately estimate the system's complete dynamic state and forecast its future behavior in real-time. A key objective is to ensure this can be done reliably, even when using incomplete or corrupted sensor data from the physical asset.
+# <<< CHANGE THIS to your Node 22 folder >>>
+$myNode = 'C:\Users\E40058770\node'
+
+# Read current user & system PATHs
+$u = [Environment]::GetEnvironmentVariable('Path','User')
+$s = [Environment]::GetEnvironmentVariable('Path','Machine')
+
+# Build a new user PATH:
+#  - put your Node 22 first
+#  - keep existing USER paths (minus the old Program Files\nodejs, just in case)
+#  - copy SYSTEM paths into USER (minus Program Files\nodejs) so you don't lose tools
+$paths =
+  @($myNode) +
+  ($u -split ';' | Where-Object { $_ -and $_ -ne 'C:\Program Files\nodejs' }) +
+  ($s -split ';' | Where-Object { $_ -and $_ -ne 'C:\Program Files\nodejs' })
+
+# Deduplicate & write back to USER PATH
+$new = ($paths | Select-Object -Unique) -join ';'
+[Environment]::SetEnvironmentVariable('Path', $new, 'User')
+
+'User PATH updated. Close and reopen CMD/PowerShell windows.'
