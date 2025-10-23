@@ -1,98 +1,60 @@
-from flask import Flask, render_template, request
 import requests
 import urllib.parse
 
-# --- FLASK APP INITIALIZATION ---
-app = Flask(__name__)
+# --- CONFIGURATION ---
+# Enter the Host and API Token for your Mobi instance
+MOBI_HOST = "https://localhost:8443"
+API_TOKEN = "your_full_api_token_here"
 
-# --- BASE SPARQL QUERY (with a placeholder for the abbreviation) ---
-BASE_SPARQL_QUERY = """
-PREFIX aafo: <https://ontologyhub.rtx.com/RTXEnterpriseOntologies/AerospaceAbbreviationandFull-formOntology/>
-PREFIX bfo: <http://purl.obolibrary.org/obo/>
-PREFIX prov: <http://www.w3.org/ns/prov#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX dcterms: <http://purl.org/dc/terms/>
+# The full IRI of the catalog you want to search in
+CATALOG_IRI = "http://mobi.com/catalog-local"
 
-SELECT DISTINCT ?abbreviation ?fullForm ?dataSource ?sourceFile ?dateLoaded
-WHERE {{
-    ?abbreviationIBE a aafo:InformationBearingEntity ;
-                     aafo:hastextvalue ?abbreviation .
-    
-    ?shortFormEntity a aafo:ShortForm ;
-                     bfo:BFO_0000084 ?abbreviationIBE .
-    
-    ?shortFormEntity aafo:expandsTo ?longFormEntity .
-    
-    ?longFormEntity a aafo:LongForm ;
-                    bfo:BFO_0000084 ?longFormIBE .
-    ?longFormIBE aafo:hastextvalue ?fullForm .
-    
-    OPTIONAL {{
-        ?abbreviationIBE prov:wasDerivedFrom ?sourceEntity .
-        ?sourceEntity rdfs:label ?dataSource .
-        OPTIONAL {{ ?sourceEntity dcterms:source ?sourceFile }}
-        OPTIONAL {{ ?sourceEntity dcterms:created ?dateLoaded }}
-    }}
-    
-    FILTER(?abbreviation = "{abbreviation_input}")
-}}
-"""
+# --- SCRIPT ---
 
-# --- WEB ROUTES ---
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    # Initialize all possible template variables
-    form_data = {
-        'mobi_host': request.form.get('mobi_host'),
-        'api_token': request.form.get('api_token'),
-        'abbreviation': request.form.get('abbreviation')
+def get_all_record_iris():
+    """
+    Connects to the Mobi API to fetch and print the IRIs of all records in the specified catalog.
+    """
+    print(f"Fetching record IRIs from catalog: {CATALOG_IRI}")
+    
+    # URL-encode the catalog IRI to use it safely in the path
+    encoded_catalog_iri = urllib.parse.quote(CATALOG_IRI, safe='')
+    list_url = f"{MOBI_HOST}/mobirest/catalogs/{encoded_catalog_iri}/records"
+    
+    headers = {'Cookie': f'mobi_web_token={API_TOKEN}'}
+    params = {
+        'limit': 100,  # You can increase this limit if you have more than 100 records
+        'offset': 0,
+        'sort': 'http://purl.org/dc/terms/title'
     }
-    results_data = {
-        'results': None,
-        'headers': None,
-        'error': None
-    }
-
-    if request.method == 'POST':
-        # Basic validation
-        if not all(form_data.values()):
-            results_data['error'] = "Mobi Host, API Token, and Abbreviation are all required."
-            return render_template('index.html', **form_data, **results_data)
-
-        try:
-            # Inject the user's input into the SPARQL query
-            final_query = BASE_SPARQL_QUERY.format(abbreviation_input=form_data['abbreviation'])
-            
-            # Use the proven API communication logic with data from the form
-            store_type = "dataset-record"
-            record_iri = "https://mobi.com/records#8141a65d-19b0-4a4b-b4cf-e99b548e809f"
-            encoded_record_iri = urllib.parse.quote(record_iri, safe='')
-            url = f"{form_data['mobi_host']}/mobirest/sparql/{store_type}/{encoded_record_iri}/limited-results"
-
-            request_headers = {
-                'Cookie': f"mobi_web_token={form_data['api_token']}",
-                'Accept': 'application/json',
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
-            data = {'query': final_query}
-
-            response = requests.post(url, headers=request_headers, data=data, verify=False, timeout=60)
-            response.raise_for_status()
-
-            results_json = response.json()
-            results_data['results'] = results_json.get('results', {}).get('bindings', [])
-            results_data['headers'] = results_json.get('head', {}).get('vars', [])
-
-        except requests.exceptions.RequestException as e:
-            results_data['error'] = f"An API error occurred: {e}"
-            if e.response is not None:
-                results_data['error'] += f" | Details: {e.response.text}"
+    
+    try:
+        requests.packages.urllib3.disable_warnings()
+        response = requests.get(list_url, headers=headers, params=params, verify=False, timeout=30)
+        response.raise_for_status()
         
-        return render_template('index.html', **form_data, **results_data)
+        records = response.json()
 
-    # For a GET request, just show the page
-    return render_template('index.html', **form_data, **results_data)
+        if not records:
+            print("\n❌ No records were found in this catalog.")
+            return
 
-# --- RUN THE APP ---
-if __name__ == '__main__':
-    app.run(debug=True, port=5678)
+        print("\n✅ Found the following record IRIs:\n")
+        for record in records:
+            title = record.get('http://purl.org/dc/terms/title', [{}])[0].get('@value', 'No Title')
+            iri = record.get('@id', 'No IRI Found')
+            
+            print(f"Title: {title}")
+            print(f"IRI: {iri}\n")
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ An error occurred: {e}")
+        if e.response is not None:
+            print(f"Response Body: {e.response.text}")
+
+
+if __name__ == "__main__":
+    if API_TOKEN == "your_full_api_token_here":
+        print("Please update the API_TOKEN variable in the script before running.")
+    else:
+        get_all_record_iris()
