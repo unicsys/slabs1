@@ -1,72 +1,22 @@
-import requests
-import urllib.parse
-import json
+Subject: Online Courses for AI & Digital Transformation Learning
 
-# --- Configuration ---
-MOBI_HOST = "https://localhost:8443"
-API_TOKEN = "your_full_api_token_here"
+Hi [Manager’s Name],
 
-# ===================================================================
-# >> EDIT THIS SECTION <<
-# ===================================================================
+As we discussed, I’ve shortlisted two online courses that align closely with my current role and our ongoing AI and digital transformation initiatives:
 
-# 1. The IRI of the record you want to query.
-RECORD_IRI = "https://mobi.com/records#8141a65d-19b0-4a4b-b4cf-e99b548e809f"
+MIT Professional Education – “Applied Agentic AI for Organizational Transformation”
+• Duration: 8 weeks (starting December 2, 2025)
+• Effort: ~6–8 hours per week
+• Cost: US $2,880 (after 10% early enrollment discount before Nov 6, 2025)
+• Focus: Generative & Agentic AI, AI strategy, ethics/governance, and practical frameworks for enterprise transformation.
 
-# 2. A simple SPARQL query to find the first 10 triples.
-SPARQL_QUERY = """
-SELECT ?subject ?predicate ?object
-WHERE {
-  ?subject ?predicate ?object .
-}
-LIMIT 10
-"""
+Google Advanced Data Analytics Professional Certificate (Coursera)
+• Duration: ~6 months (flexible schedule, ~10 hours per week)
+• Cost: Included in Coursera Plus (~US $399/year)
+• Focus: Data analysis, regression models, Python, ML, and visualization—hands-on analytics aligned with AI applications.
 
-# ===================================================================
-# >> END OF EDIT SECTION <<
-# ===================================================================
+Both are highly relevant to building AI-enabled decision-support and transformation capabilities in our work.
+Please let me know if I can proceed with enrollment for the MIT program, and later plan for the Coursera certificate as a supplementary course.
 
-def run_query():
-    """Executes the SPARQL query against the specified Mobi record."""
-
-    if "your_full_api_token_here" in API_TOKEN:
-        print("Error: Please update your API_TOKEN in the script before running.")
-        return
-
-    print(f"Querying for 10 triples from: {RECORD_IRI}")
-
-    store_type = "dataset-record"
-    encoded_iri = urllib.parse.quote(RECORD_IRI, safe='')
-    url = f"{MOBI_HOST}/mobirest/sparql/{store_type}/{encoded_iri}/limited-results"
-
-    headers = {
-        'Cookie': f'mobi_web_token={API_TOKEN}',
-        'Accept': 'application/json',
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-    
-    try:
-        requests.packages.urllib3.disable_warnings()
-        response = requests.post(url, headers=headers, data={'query': SPARQL_QUERY}, verify=False)
-        response.raise_for_status()
-        
-        results = response.json()
-        bindings = results.get('results', {}).get('bindings', [])
-
-        if not bindings:
-            print("\nQuery successful: No results found.")
-            return
-
-        print("\n--- Query Results ---")
-        for row in bindings:
-            for variable, value in row.items():
-                print(f"  {variable}: {value.get('value')}")
-            print("-" * 20)
-
-    except requests.exceptions.RequestException as e:
-        print(f"\nError during API request: {e}")
-        if e.response:
-            print(f"Server response: {e.response.text}")
-
-if __name__ == "__main__":
-    run_query()
+Best regards,
+Shatad
