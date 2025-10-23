@@ -1,21 +1,72 @@
-# <<< CHANGE THIS to your Node 22 folder >>>
-$myNode = 'C:\Users\E40058770\node'
+import requests
+import urllib.parse
+import json
 
-# Read current user & system PATHs
-$u = [Environment]::GetEnvironmentVariable('Path','User')
-$s = [Environment]::GetEnvironmentVariable('Path','Machine')
+# --- Configuration ---
+MOBI_HOST = "https://localhost:8443"
+API_TOKEN = "your_full_api_token_here"
 
-# Build a new user PATH:
-#  - put your Node 22 first
-#  - keep existing USER paths (minus the old Program Files\nodejs, just in case)
-#  - copy SYSTEM paths into USER (minus Program Files\nodejs) so you don't lose tools
-$paths =
-  @($myNode) +
-  ($u -split ';' | Where-Object { $_ -and $_ -ne 'C:\Program Files\nodejs' }) +
-  ($s -split ';' | Where-Object { $_ -and $_ -ne 'C:\Program Files\nodejs' })
+# ===================================================================
+# >> EDIT THIS SECTION <<
+# ===================================================================
 
-# Deduplicate & write back to USER PATH
-$new = ($paths | Select-Object -Unique) -join ';'
-[Environment]::SetEnvironmentVariable('Path', $new, 'User')
+# 1. The IRI of the record you want to query.
+RECORD_IRI = "https://mobi.com/records#8141a65d-19b0-4a4b-b4cf-e99b548e809f"
 
-'User PATH updated. Close and reopen CMD/PowerShell windows.'
+# 2. A simple SPARQL query to find the first 10 triples.
+SPARQL_QUERY = """
+SELECT ?subject ?predicate ?object
+WHERE {
+  ?subject ?predicate ?object .
+}
+LIMIT 10
+"""
+
+# ===================================================================
+# >> END OF EDIT SECTION <<
+# ===================================================================
+
+def run_query():
+    """Executes the SPARQL query against the specified Mobi record."""
+
+    if "your_full_api_token_here" in API_TOKEN:
+        print("Error: Please update your API_TOKEN in the script before running.")
+        return
+
+    print(f"Querying for 10 triples from: {RECORD_IRI}")
+
+    store_type = "dataset-record"
+    encoded_iri = urllib.parse.quote(RECORD_IRI, safe='')
+    url = f"{MOBI_HOST}/mobirest/sparql/{store_type}/{encoded_iri}/limited-results"
+
+    headers = {
+        'Cookie': f'mobi_web_token={API_TOKEN}',
+        'Accept': 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    
+    try:
+        requests.packages.urllib3.disable_warnings()
+        response = requests.post(url, headers=headers, data={'query': SPARQL_QUERY}, verify=False)
+        response.raise_for_status()
+        
+        results = response.json()
+        bindings = results.get('results', {}).get('bindings', [])
+
+        if not bindings:
+            print("\nQuery successful: No results found.")
+            return
+
+        print("\n--- Query Results ---")
+        for row in bindings:
+            for variable, value in row.items():
+                print(f"  {variable}: {value.get('value')}")
+            print("-" * 20)
+
+    except requests.exceptions.RequestException as e:
+        print(f"\nError during API request: {e}")
+        if e.response:
+            print(f"Server response: {e.response.text}")
+
+if __name__ == "__main__":
+    run_query()
