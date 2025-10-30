@@ -1,0 +1,1369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model-Based Enterprise - Implementation Architecture</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .top-band {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .top-band h1 {
+            margin: 0;
+            font-size: 2.2em;
+            font-weight: 300;
+        }
+
+        .top-band p {
+            margin: 5px 0 0 0;
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        .section {
+            background: white;
+            margin: 30px 0;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h2 {
+            color: #1e3c72;
+            font-size: 1.8em;
+            margin-top: 0;
+            border-bottom: 3px solid #2a5298;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #2a5298;
+            font-size: 1.4em;
+            margin-top: 25px;
+        }
+
+        h4 {
+            color: #444;
+            font-size: 1.1em;
+            margin-top: 20px;
+        }
+
+        .architecture-diagram {
+            background: #fafafa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .layer {
+            background: white;
+            border: 2px solid #2a5298;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .layer-title {
+            background: #2a5298;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .component-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .component {
+            background: #e8f4f8;
+            border: 1px solid #2a5298;
+            border-radius: 4px;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .component-title {
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 5px;
+        }
+
+        .component-desc {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .flow-diagram {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .flow-step {
+            background: #f0f8ff;
+            border-left: 4px solid #2a5298;
+            padding: 15px 20px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .flow-step-number {
+            background: #2a5298;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .flow-step-title {
+            font-weight: 600;
+            color: #1e3c72;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+
+        .code-comment {
+            color: #5c6370;
+        }
+
+        .code-keyword {
+            color: #c678dd;
+        }
+
+        .code-string {
+            color: #98c379;
+        }
+
+        .code-function {
+            color: #61afef;
+        }
+
+        .integration-pattern {
+            background: #fff9e6;
+            border: 2px solid #ffc107;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .integration-pattern h4 {
+            color: #f57c00;
+            margin-top: 0;
+        }
+
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .tech-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tech-card-title {
+            font-weight: 600;
+            color: #1e3c72;
+            margin-bottom: 8px;
+        }
+
+        .tech-card-tools {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .highlight-box {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th {
+            background: #2a5298;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .arrow-down {
+            text-align: center;
+            font-size: 2em;
+            color: #2a5298;
+            margin: 10px 0;
+        }
+
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .data-flow-canvas {
+            background: white;
+            border: 2px solid #2a5298;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 25px 0;
+        }
+
+        .swimlane {
+            border: 1px solid #ddd;
+            margin: 15px 0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .swimlane-header {
+            background: #2a5298;
+            color: white;
+            padding: 10px 15px;
+            font-weight: 600;
+        }
+
+        .swimlane-content {
+            padding: 20px;
+            background: #fafafa;
+        }
+
+        .process-box {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px;
+            display: inline-block;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .decision-box {
+            background: #fff9c4;
+            border: 2px solid #fbc02d;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px;
+            display: inline-block;
+            min-width: 150px;
+            text-align: center;
+            clip-path: polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%);
+        }
+
+        .data-store-box {
+            background: #f3e5f5;
+            border: 2px solid #9c27b0;
+            border-radius: 4px;
+            padding: 12px;
+            margin: 10px;
+            display: inline-block;
+            min-width: 150px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-band">
+        <h1>Model-Based Enterprise (MBE)</h1>
+        <p>Implementation Architecture & Ontology Integration Framework</p>
+    </div>
+
+    <div class="container">
+
+        <!-- Executive Overview -->
+        <div class="section">
+            <h2>1. Executive Overview</h2>
+            <p>A Model-Based Enterprise leverages <strong>ontologies as the semantic backbone</strong> to create a unified understanding of data across disparate systems. This architecture document explains how ontologies practically integrate with existing databases to enable:</p>
+            
+            <div class="component-grid">
+                <div class="component">
+                    <div class="component-title">🎯 Semantic Interoperability</div>
+                    <div class="component-desc">Different systems understand the same concepts uniformly</div>
+                </div>
+                <div class="component">
+                    <div class="component-title">🔗 Data Integration</div>
+                    <div class="component-desc">Connect data across silos without physical consolidation</div>
+                </div>
+                <div class="component">
+                    <div class="component-title">📊 Data Governance</div>
+                    <div class="component-desc">Centralized definitions with distributed implementation</div>
+                </div>
+                <div class="component">
+                    <div class="component-title">🤖 AI/ML Readiness</div>
+                    <div class="component-desc">Structured knowledge for intelligent applications</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Layers -->
+        <div class="section">
+            <h2>2. Five-Layer MBE Architecture</h2>
+            
+            <div class="architecture-diagram">
+                <div class="layer">
+                    <div class="layer-title">Layer 5: Application & Analytics</div>
+                    <div class="component-grid">
+                        <div class="component">
+                            <div class="component-title">Business Applications</div>
+                            <div class="component-desc">Maintenance apps, dashboards, reporting</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">AI/ML Workloads</div>
+                            <div class="component-desc">Predictive maintenance, anomaly detection</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Analytics</div>
+                            <div class="component-desc">BI tools, data science notebooks</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="layer">
+                    <div class="layer-title">Layer 4: Semantic Access Layer</div>
+                    <div class="component-grid">
+                        <div class="component">
+                            <div class="component-title">Semantic APIs</div>
+                            <div class="component-desc">GraphQL, REST APIs with ontology validation</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">SPARQL Endpoint</div>
+                            <div class="component-desc">Query knowledge graph directly</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Data Catalog</div>
+                            <div class="component-desc">Discover data by ontology concepts</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="layer">
+                    <div class="layer-title">Layer 3: Knowledge Graph & Semantic Layer</div>
+                    <div class="component-grid">
+                        <div class="component">
+                            <div class="component-title">Knowledge Graph</div>
+                            <div class="component-desc">Neo4j, Amazon Neptune, RDF triple store</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Ontology Repository</div>
+                            <div class="component-desc">OWL files, vocabulary management</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Semantic Mapper</div>
+                            <div class="component-desc">Maps database columns to ontology classes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="layer">
+                    <div class="layer-title">Layer 2: Integration & Virtualization</div>
+                    <div class="component-grid">
+                        <div class="component">
+                            <div class="component-title">Data Virtualization</div>
+                            <div class="component-desc">Denodo, Dremio - federated queries</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">ETL/ELT Pipelines</div>
+                            <div class="component-desc">Apache Airflow, dbt with semantic lineage</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Master Data Hub</div>
+                            <div class="component-desc">Golden records aligned to ontology</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="layer">
+                    <div class="layer-title">Layer 1: Physical Data Sources</div>
+                    <div class="component-grid">
+                        <div class="component">
+                            <div class="component-title">Relational DBs</div>
+                            <div class="component-desc">SQL Server, Oracle, PostgreSQL</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Data Lakes</div>
+                            <div class="component-desc">Databricks, Snowflake, S3</div>
+                        </div>
+                        <div class="component">
+                            <div class="component-title">Legacy Systems</div>
+                            <div class="component-desc">Hawkeye, Axon, mainframes</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight-box">
+                <strong>Key Principle:</strong> Ontologies sit ABOVE physical databases, providing a semantic abstraction layer. Physical databases remain unchanged, but are mapped to ontology concepts for unified access.
+            </div>
+        </div>
+
+        <!-- How Ontology Integrates with Databases -->
+        <div class="section">
+            <h2>3. How Ontologies Integrate with Databases</h2>
+
+            <h3>3.1 The Integration Patterns</h3>
+
+            <div class="integration-pattern">
+                <h4>Pattern 1: Semantic Mapping (Most Common)</h4>
+                <p><strong>How it works:</strong> Create explicit mappings between database columns and ontology classes/properties. Leave physical databases untouched.</p>
+                
+                <table>
+                    <tr>
+                        <th>Physical Database</th>
+                        <th>Ontology Concept</th>
+                        <th>Mapping Rule</th>
+                    </tr>
+                    <tr>
+                        <td>MaintDB_East.ENGINE_DEFECTS.ENGINE_SN</td>
+                        <td>AircraftEngineIdentifier</td>
+                        <td>1:1 mapping, designates AircraftEngine</td>
+                    </tr>
+                    <tr>
+                        <td>WorkOrderDB.MAINTENANCE_LOG.Engine_ID</td>
+                        <td>AircraftEngineIdentifier</td>
+                        <td>1:1 mapping, same concept, different name</td>
+                    </tr>
+                    <tr>
+                        <td>AssetTracker_DB.SERVICE_RECORDS.Asset_Serial</td>
+                        <td>AircraftEngineIdentifier</td>
+                        <td>1:1 mapping, same concept, called "Asset_Serial"</td>
+                    </tr>
+                </table>
+
+                <p><strong>Implementation:</strong></p>
+                <div class="code-block">
+<span class="code-comment"># Example mapping configuration (R2RML, YAML, or JSON)</span>
+<span class="code-keyword">mapping:</span>
+  <span class="code-string">source:</span>
+    database: MaintDB_East
+    table: ENGINE_DEFECTS
+    column: ENGINE_SN
+  <span class="code-string">target:</span>
+    ontology_class: AircraftEngineIdentifier
+    relationship: designates
+    target_class: AircraftEngine
+  <span class="code-string">validation:</span>
+    - check_format: "^E[0-9]{4}$"
+    - check_uniqueness: true
+                </div>
+            </div>
+
+            <div class="integration-pattern">
+                <h4>Pattern 2: Knowledge Graph Materialization</h4>
+                <p><strong>How it works:</strong> Periodically extract data from databases and load into a knowledge graph that follows the ontology structure.</p>
+                
+                <div class="flow-step">
+                    <span class="flow-step-number">1</span>
+                    <div style="display: inline-block; vertical-align: top;">
+                        <div class="flow-step-title">Extract</div>
+                        Query source databases for relevant entities (engines, defects, maintenance records)
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">2</span>
+                    <div style="display: inline-block; vertical-align: top;">
+                        <div class="flow-step-title">Transform</div>
+                        Apply ontology rules to create RDF triples or graph nodes/edges
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">3</span>
+                    <div style="display: inline-block; vertical-align: top;">
+                        <div class="flow-step-title">Load</div>
+                        Insert into knowledge graph (Neo4j, Neptune) following ontology schema
+                    </div>
+                </div>
+
+                <div class="code-block">
+<span class="code-comment"># Example: Creating knowledge graph nodes from database</span>
+<span class="code-keyword">MATCH</span> (db_record) 
+<span class="code-keyword">WHERE</span> db_record.source = <span class="code-string">'MaintDB_East.ENGINE_DEFECTS'</span>
+<span class="code-keyword">CREATE</span> (identifier:AircraftEngineIdentifier {
+  value: db_record.ENGINE_SN,
+  source_system: <span class="code-string">'Hawkeye'</span>,
+  last_updated: timestamp()
+})
+<span class="code-keyword">CREATE</span> (engine:AircraftEngine {
+  type: <span class="code-string">'Material Thing'</span>
+})
+<span class="code-keyword">CREATE</span> (identifier)-[:DESIGNATES]->(engine)
+                </div>
+            </div>
+
+            <div class="integration-pattern">
+                <h4>Pattern 3: Virtual Integration (Federated Queries)</h4>
+                <p><strong>How it works:</strong> Query data in-place across multiple databases using ontology as the query interface. No data movement.</p>
+                
+                <div class="code-block">
+<span class="code-comment">// User queries using ontology terms, not database details</span>
+<span class="code-keyword">SELECT</span> ?engineIdentifier ?defectDescription ?maintenanceDate
+<span class="code-keyword">WHERE</span> {
+  ?identifier <span class="code-function">rdf:type</span> AircraftEngineIdentifier .
+  ?identifier <span class="code-function">designates</span> ?engine .
+  ?defect <span class="code-function">affectsEngine</span> ?engine .
+  ?defect <span class="code-function">hasDescription</span> ?defectDescription .
+  ?maintenance <span class="code-function">performedOn</span> ?engine .
+  ?maintenance <span class="code-function">hasDate</span> ?maintenanceDate .
+}
+
+<span class="code-comment">// Behind the scenes, virtualization layer translates to:</span>
+<span class="code-keyword">SELECT</span> 
+  ed.ENGINE_SN,
+  ed.DEFECT_DESC,
+  ml.MAINT_DATE
+<span class="code-keyword">FROM</span> MaintDB_East.ENGINE_DEFECTS ed
+<span class="code-keyword">JOIN</span> WorkOrderDB.MAINTENANCE_LOG ml 
+  <span class="code-keyword">ON</span> ed.ENGINE_SN = ml.Engine_ID
+                </div>
+
+                <p><strong>Tools:</strong> Denodo, Dremio, Apache Drill, Stardog</p>
+            </div>
+
+            <h3>3.2 Detailed Implementation Example: Aircraft Engine Identifier</h3>
+
+            <h4>Step 1: Define the Ontology</h4>
+            <div class="code-block">
+<span class="code-comment">// OWL Definition (stored in ontology repository)</span>
+<span class="code-keyword">Class:</span> AircraftEngineIdentifier
+  <span class="code-function">SubClassOf:</span> Identifier
+  <span class="code-function">SubClassOf:</span> InformationContentEntity
+  
+  <span class="code-comment">// Properties</span>
+  <span class="code-function">designates:</span> AircraftEngine (exactly 1)
+  <span class="code-function">hasFormat:</span> xsd:string
+  <span class="code-function">hasSource:</span> System
+  
+  <span class="code-comment">// Constraints</span>
+  <span class="code-function">Constraints:</span>
+    - Must be unique across enterprise
+    - Format follows pattern: ^[A-Z]{1,2}[0-9]{4,6}$
+    - Required for all AircraftEngine instances
+            </div>
+
+            <h4>Step 2: Map to Physical Databases</h4>
+            <div class="code-block">
+<span class="code-comment"># Mapping Registry (stored in semantic layer)</span>
+<span class="code-keyword">mappings:</span>
+  - <span class="code-string">id:</span> mapping_001
+    <span class="code-string">ontology_class:</span> AircraftEngineIdentifier
+    <span class="code-string">physical_location:</span>
+      system: Hawkeye
+      database: MaintDB_East
+      schema: dbo
+      table: ENGINE_DEFECTS
+      column: ENGINE_SN
+    <span class="code-string">confidence:</span> 1.0
+    <span class="code-string">validated:</span> 2025-01-15
+    <span class="code-string">owner:</span> Data Governance Team
+    
+  - <span class="code-string">id:</span> mapping_002
+    <span class="code-string">ontology_class:</span> AircraftEngineIdentifier
+    <span class="code-string">physical_location:</span>
+      system: Axon
+      database: WorkOrderDB
+      schema: operations
+      table: MAINTENANCE_LOG
+      column: Engine_ID
+    <span class="code-string">transformation:</span> TRIM(UPPER(Engine_ID))
+    <span class="code-string">confidence:</span> 0.95
+    <span class="code-string">notes:</span> "Sometimes has leading/trailing spaces"
+            </div>
+
+            <h4>Step 3: Build the Semantic Access Layer</h4>
+            <div class="code-block">
+<span class="code-comment">// GraphQL API that understands ontology</span>
+<span class="code-keyword">type</span> <span class="code-function">AircraftEngine</span> {
+  identifier: AircraftEngineIdentifier!
+  model: String
+  manufacturer: String
+  defects: [Defect]
+  maintenanceHistory: [MaintenanceRecord]
+}
+
+<span class="code-keyword">type</span> <span class="code-function">AircraftEngineIdentifier</span> {
+  value: String!
+  sourceSystem: String
+  designates: AircraftEngine!
+}
+
+<span class="code-comment">// Resolver automatically queries correct databases using mappings</span>
+<span class="code-keyword">query</span> {
+  aircraftEngine(identifier: <span class="code-string">"E1234"</span>) {
+    identifier { value, sourceSystem }
+    defects { description, severity }
+  }
+}
+            </div>
+        </div>
+
+        <!-- Data Flow: How Things Happen -->
+        <div class="section">
+            <h2>4. Data Flow: How Things Actually Happen</h2>
+
+            <h3>4.1 Scenario: Query for Engine Defects</h3>
+
+            <div class="data-flow-canvas">
+                <div class="swimlane">
+                    <div class="swimlane-header">User / Application Layer</div>
+                    <div class="swimlane-content">
+                        <div class="process-box">User submits query: "Show all defects for Engine E1234"</div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="swimlane">
+                    <div class="swimlane-header">Semantic API Layer</div>
+                    <div class="swimlane-content">
+                        <div class="process-box">Parse query</div>
+                        →
+                        <div class="process-box">Identify ontology concepts: AircraftEngineIdentifier, Defect</div>
+                        →
+                        <div class="process-box">Validate query against ontology</div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="swimlane">
+                    <div class="swimlane-header">Semantic Mapper</div>
+                    <div class="swimlane-content">
+                        <div class="process-box">Look up mappings for AircraftEngineIdentifier</div>
+                        →
+                        <div class="process-box">Find: MaintDB_East.ENGINE_DEFECTS.ENGINE_SN</div>
+                        →
+                        <div class="process-box">Generate SQL query plan</div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="swimlane">
+                    <div class="swimlane-header">Integration Layer</div>
+                    <div class="swimlane-content">
+                        <div class="process-box">Execute SQL: SELECT * FROM ENGINE_DEFECTS WHERE ENGINE_SN = 'E1234'</div>
+                        →
+                        <div class="data-store-box">Query MaintDB_East</div>
+                    </div>
+                </div>
+
+                <div class="arrow-down">↓</div>
+
+                <div class="swimlane">
+                    <div class="swimlane-header">Transform & Return</div>
+                    <div class="swimlane-content">
+                        <div class="process-box">Map database results to ontology structure</div>
+                        →
+                        <div class="process-box">Enrich with metadata (source, timestamp)</div>
+                        →
+                        <div class="process-box">Return to user in ontology format</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3>4.2 Scenario: Cross-System Data Integration</h3>
+
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="flow-step-number">1</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">User Request: "Complete maintenance history for Engine E1234"</div>
+                        <p>This requires data from multiple systems:
+                        <ul>
+                            <li><strong>Hawkeye</strong> (defects)</li>
+                            <li><strong>Axon</strong> (work orders)</li>
+                            <li><strong>Databricks</strong> (service records)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">2</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Semantic API identifies related ontology concepts</div>
+                        <ul>
+                            <li>AircraftEngineIdentifier → all three systems</li>
+                            <li>Defect → Hawkeye</li>
+                            <li>MaintenanceWorkOrder → Axon</li>
+                            <li>ServiceRecord → Databricks</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">3</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Parallel queries to all systems</div>
+                        <div class="code-block">
+<span class="code-comment">-- Query 1: Hawkeye</span>
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> MaintDB_East.ENGINE_DEFECTS 
+<span class="code-keyword">WHERE</span> ENGINE_SN = <span class="code-string">'E1234'</span>
+
+<span class="code-comment">-- Query 2: Axon</span>
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> WorkOrderDB.MAINTENANCE_LOG 
+<span class="code-keyword">WHERE</span> Engine_ID = <span class="code-string">'E1234'</span>
+
+<span class="code-comment">-- Query 3: Databricks</span>
+<span class="code-keyword">SELECT</span> * <span class="code-keyword">FROM</span> AssetTracker_DB.SERVICE_RECORDS 
+<span class="code-keyword">WHERE</span> Asset_Serial = <span class="code-string">'E1234'</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">4</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Transform to unified ontology structure</div>
+                        <p>Each result set is mapped to ontology classes:
+                        <ul>
+                            <li>Column ENGINE_SN → AircraftEngineIdentifier.value</li>
+                            <li>Column DEFECT_DESC → Defect.description</li>
+                            <li>Column MAINT_DATE → MaintenanceWorkOrder.date</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">5</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Merge and deduplicate</div>
+                        <p>Use ontology relationships to properly join data:
+                        <ul>
+                            <li>All records reference same AircraftEngine through identifier</li>
+                            <li>Sort chronologically using ontology time properties</li>
+                            <li>Resolve duplicates using data quality rules</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">6</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Return unified view to user</div>
+                        <p>User receives complete maintenance history without knowing data came from 3 different systems</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technology Stack -->
+        <div class="section">
+            <h2>5. Recommended Technology Stack</h2>
+
+            <div class="tech-stack">
+                <div class="tech-card">
+                    <div class="tech-card-title">Ontology Management</div>
+                    <div class="tech-card-tools">
+                        • Protégé (editing)<br>
+                        • TopBraid Composer<br>
+                        • Apache Jena (storage)<br>
+                        • OWL API
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">Knowledge Graph</div>
+                    <div class="tech-card-tools">
+                        • Neo4j<br>
+                        • Amazon Neptune<br>
+                        • Stardog<br>
+                        • GraphDB
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">Data Virtualization</div>
+                    <div class="tech-card-tools">
+                        • Denodo<br>
+                        • Dremio<br>
+                        • Apache Drill<br>
+                        • Starburst/Trino
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">ETL/Semantic Mapping</div>
+                    <div class="tech-card-tools">
+                        • Apache Airflow<br>
+                        • dbt (data build tool)<br>
+                        • Talend<br>
+                        • Apache NiFi
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">Semantic API Layer</div>
+                    <div class="tech-card-tools">
+                        • GraphQL<br>
+                        • Apache Jena Fuseki<br>
+                        • Ontop<br>
+                        • Custom REST APIs
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">Data Catalog</div>
+                    <div class="tech-card-tools">
+                        • Alation<br>
+                        • Collibra<br>
+                        • Apache Atlas<br>
+                        • AWS Glue Catalog
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">Master Data Management</div>
+                    <div class="tech-card-tools">
+                        • Informatica MDM<br>
+                        • SAP MDG<br>
+                        • Semarchy<br>
+                        • Custom solutions
+                    </div>
+                </div>
+
+                <div class="tech-card">
+                    <div class="tech-card-title">Query Language</div>
+                    <div class="tech-card-tools">
+                        • SPARQL (RDF)<br>
+                        • Cypher (Neo4j)<br>
+                        • Gremlin<br>
+                        • GraphQL
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Implementation Roadmap -->
+        <div class="section">
+            <h2>6. Phased Implementation Roadmap</h2>
+
+            <h3>Phase 1: Foundation (Months 1-3)</h3>
+            <div class="flow-step">
+                <div class="flow-step-title">Deliverables:</div>
+                <ul>
+                    <li>Core ontology development (20-30 key classes like AircraftEngineIdentifier)</li>
+                    <li>Pilot data source mapping (2-3 critical systems)</li>
+                    <li>Set up ontology repository and version control</li>
+                    <li>Establish governance process and team</li>
+                    <li>Select and deploy knowledge graph platform</li>
+                </ul>
+            </div>
+
+            <h3>Phase 2: Integration (Months 4-6)</h3>
+            <div class="flow-step">
+                <div class="flow-step-title">Deliverables:</div>
+                <ul>
+                    <li>Build semantic mapping layer for pilot systems</li>
+                    <li>Implement data virtualization for federated queries</li>
+                    <li>Develop initial semantic APIs (GraphQL endpoints)</li>
+                    <li>Create knowledge graph materialization pipeline</li>
+                    <li>Build data quality validation using ontology rules</li>
+                </ul>
+            </div>
+
+            <h3>Phase 3: Expansion (Months 7-12)</h3>
+            <div class="flow-step">
+                <div class="flow-step-title">Deliverables:</div>
+                <ul>
+                    <li>Expand ontology to cover additional domains</li>
+                    <li>Onboard additional data sources (10-15 systems)</li>
+                    <li>Deploy data catalog with ontology-based search</li>
+                    <li>Build 3-5 pilot applications using semantic layer</li>
+                    <li>Implement automated mapping discovery using AI</li>
+                </ul>
+            </div>
+
+            <h3>Phase 4: Maturity (Months 13-18)</h3>
+            <div class="flow-step">
+                <div class="flow-step-title">Deliverables:</div>
+                <ul>
+                    <li>Enterprise-wide ontology coverage</li>
+                    <li>Master data management aligned to ontology</li>
+                    <li>Real-time semantic data pipelines</li>
+                    <li>AI/ML workloads consuming knowledge graph</li>
+                    <li>Self-service data discovery for all users</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Governance -->
+        <div class="section">
+            <h2>7. Data Governance & Ontology Management</h2>
+
+            <h3>7.1 Roles & Responsibilities</h3>
+            <table>
+                <tr>
+                    <th>Role</th>
+                    <th>Responsibilities</th>
+                    <th>Skills Required</th>
+                </tr>
+                <tr>
+                    <td><strong>Chief Data Officer</strong></td>
+                    <td>Executive sponsor, funding, strategic alignment</td>
+                    <td>Business strategy, data strategy</td>
+                </tr>
+                <tr>
+                    <td><strong>Ontology Engineer</strong></td>
+                    <td>Design and maintain ontology, ensure logical consistency</td>
+                    <td>OWL, RDF, logic, domain knowledge</td>
+                </tr>
+                <tr>
+                    <td><strong>Data Architect</strong></td>
+                    <td>Mapping design, integration patterns, technical architecture</td>
+                    <td>Database design, integration, APIs</td>
+                </tr>
+                <tr>
+                    <td><strong>Domain Expert</strong></td>
+                    <td>Validate ontology concepts, provide business rules</td>
+                    <td>Deep domain expertise (aviation, manufacturing, etc.)</td>
+                </tr>
+                <tr>
+                    <td><strong>Data Steward</strong></td>
+                    <td>Maintain mappings, data quality, resolve conflicts</td>
+                    <td>Data governance, business analysis</td>
+                </tr>
+                <tr>
+                    <td><strong>Software Engineer</strong></td>
+                    <td>Build semantic APIs, integration pipelines</td>
+                    <td>APIs, ETL, graph databases</td>
+                </tr>
+            </table>
+
+            <h3>7.2 Ontology Change Management</h3>
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <span class="flow-step-number">1</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Change Request</div>
+                        Stakeholder submits request to add/modify ontology concept
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">2</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Impact Analysis</div>
+                        Assess impact on existing mappings, applications, downstream systems
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">3</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Review & Approval</div>
+                        Ontology governance board reviews and approves/rejects
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">4</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Implementation</div>
+                        Update ontology, version control, update mappings
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">5</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Testing & Validation</div>
+                        Ensure logical consistency, test all affected applications
+                    </div>
+                </div>
+
+                <div class="flow-step">
+                    <span class="flow-step-number">6</span>
+                    <div style="display: inline-block; vertical-align: top; width: calc(100% - 50px);">
+                        <div class="flow-step-title">Deployment</div>
+                        Release new version, communicate to stakeholders, update documentation
+                    </div>
+                </div>
+            </div>
+
+            <h3>7.3 Versioning Strategy</h3>
+            <div class="code-block">
+<span class="code-comment"># Semantic versioning for ontology</span>
+<span class="code-string">MAJOR.MINOR.PATCH</span>
+
+<span class="code-comment"># MAJOR: Breaking changes (incompatible with previous version)</span>
+Example: Removing a class, changing property domain/range
+
+<span class="code-comment"># MINOR: New features (backward compatible)</span>
+Example: Adding new class, adding new property
+
+<span class="code-comment"># PATCH: Bug fixes, clarifications</span>
+Example: Fixing typos, adding examples, improving documentation
+
+<span class="code-keyword">Current Version:</span> <span class="code-string">2.3.1</span>
+<span class="code-keyword">Released:</span> <span class="code-string">2025-01-15</span>
+<span class="code-keyword">Git Tag:</span> <span class="code-string">v2.3.1</span>
+            </div>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="section">
+            <h2>8. Best Practices & Lessons Learned</h2>
+
+            <div class="highlight-box">
+                <h4>✅ DO:</h4>
+                <ul>
+                    <li><strong>Start small, think big:</strong> Begin with 1-2 critical use cases, but design ontology for enterprise scale</li>
+                    <li><strong>Involve domain experts early:</strong> They define the concepts, not IT</li>
+                    <li><strong>Version everything:</strong> Ontologies, mappings, transformations - all in Git</li>
+                    <li><strong>Automate mapping discovery:</strong> Use ML to suggest mappings, but require human validation</li>
+                    <li><strong>Build incrementally:</strong> Add data sources progressively, don't try to integrate everything at once</li>
+                    <li><strong>Measure value:</strong> Track time saved, queries answered, decisions enabled</li>
+                    <li><strong>Document rationale:</strong> Explain WHY each ontology decision was made</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>❌ DON'T:</h4>
+                <ul>
+                    <li><strong>Don't build a "perfect" ontology:</strong> It will never be perfect, aim for "good enough"</li>
+                    <li><strong>Don't force physical data migration:</strong> Integrate in-place whenever possible</li>
+                    <li><strong>Don't ignore data quality:</strong> Ontology exposes quality issues - fix them</li>
+                    <li><strong>Don't create ontology in isolation:</strong> Must be driven by real business needs</li>
+                    <li><strong>Don't neglect performance:</strong> Graph queries can be slow, optimize early</li>
+                    <li><strong>Don't forget about security:</strong> Implement fine-grained access control at semantic layer</li>
+                </ul>
+            </div>
+
+            <h3>8.1 Common Challenges & Solutions</h3>
+            <table>
+                <tr>
+                    <th>Challenge</th>
+                    <th>Solution</th>
+                </tr>
+                <tr>
+                    <td>Different systems use different identifiers for same concept</td>
+                    <td>Create master identifier mapping table, implement ID resolution service</td>
+                </tr>
+                <tr>
+                    <td>Ontology too complex for business users</td>
+                    <td>Create simplified "views" of ontology for different audiences</td>
+                </tr>
+                <tr>
+                    <td>Performance degradation with large knowledge graphs</td>
+                    <td>Implement caching, materialized views, query optimization</td>
+                </tr>
+                <tr>
+                    <td>Resistance to change from legacy system owners</td>
+                    <td>Show quick wins, don't require changes to their systems</td>
+                </tr>
+                <tr>
+                    <td>Difficulty maintaining mappings as schemas evolve</td>
+                    <td>Implement automated schema change detection and alerting</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Metrics -->
+        <div class="section">
+            <h2>9. Success Metrics & KPIs</h2>
+
+            <h3>Technical Metrics</h3>
+            <ul>
+                <li><strong>Data Source Coverage:</strong> % of enterprise databases mapped to ontology</li>
+                <li><strong>Ontology Completeness:</strong> % of business concepts represented in ontology</li>
+                <li><strong>Query Response Time:</strong> Average time for semantic queries vs. traditional SQL</li>
+                <li><strong>Data Quality Score:</strong> % of records conforming to ontology rules</li>
+                <li><strong>API Adoption:</strong> Number of applications using semantic APIs</li>
+            </ul>
+
+            <h3>Business Metrics</h3>
+            <ul>
+                <li><strong>Time to Insight:</strong> Reduction in time to answer cross-system questions</li>
+                <li><strong>Data Discovery:</strong> Time to find relevant data for new analysis</li>
+                <li><strong>Integration Cost:</strong> Cost to integrate new data source (should decrease over time)</li>
+                <li><strong>Decision Quality:</strong> Improvement in data-driven decisions (surveys)</li>
+                <li><strong>Compliance:</strong> Reduction in data governance violations</li>
+            </ul>
+
+            <h3>User Satisfaction</h3>
+            <ul>
+                <li><strong>Self-Service Rate:</strong> % of data questions answered without IT help</li>
+                <li><strong>User Adoption:</strong> Number of active users of semantic data catalog</li>
+                <li><strong>NPS Score:</strong> Net Promoter Score from data consumers</li>
+            </ul>
+        </div>
+
+        <!-- Example Code: Complete ETL Pipeline -->
+        <div class="section">
+            <h2>10. Code Example: Semantic ETL Pipeline</h2>
+
+            <h3>10.1 Python: Extract and Map to Ontology</h3>
+            <div class="code-block">
+<span class="code-keyword">import</span> pandas <span class="code-keyword">as</span> pd
+<span class="code-keyword">from</span> rdflib <span class="code-keyword">import</span> Graph, Namespace, URIRef, Literal
+<span class="code-keyword">from</span> rdflib.namespace <span class="code-keyword">import</span> RDF, RDFS
+
+<span class="code-comment"># Define ontology namespace</span>
+MBE = Namespace(<span class="code-string">"http://example.com/mbe-ontology#"</span>)
+
+<span class="code-comment"># Initialize knowledge graph</span>
+g = Graph()
+g.bind(<span class="code-string">"mbe"</span>, MBE)
+
+<span class="code-comment"># Extract from database</span>
+<span class="code-keyword">def</span> <span class="code-function">extract_from_database</span>(connection_string):
+    query = <span class="code-string">"""
+    SELECT 
+        ENGINE_SN,
+        DEFECT_DESC,
+        SEVERITY,
+        REPORTED_DATE
+    FROM MaintDB_East.ENGINE_DEFECTS
+    WHERE REPORTED_DATE >= '2025-01-01'
+    """</span>
+    <span class="code-keyword">return</span> pd.read_sql(query, connection_string)
+
+<span class="code-comment"># Transform to ontology concepts</span>
+<span class="code-keyword">def</span> <span class="code-function">transform_to_ontology</span>(df):
+    <span class="code-keyword">for</span> idx, row <span class="code-keyword">in</span> df.iterrows():
+        <span class="code-comment"># Create identifier node</span>
+        identifier_uri = URIRef(<span class="code-string">f"http://example.com/identifier/{row['ENGINE_SN']}"</span>)
+        g.add((identifier_uri, RDF.type, MBE.AircraftEngineIdentifier))
+        g.add((identifier_uri, MBE.hasValue, Literal(row[<span class="code-string">'ENGINE_SN'</span>])))
+        g.add((identifier_uri, MBE.sourceSystem, Literal(<span class="code-string">'Hawkeye'</span>)))
+        
+        <span class="code-comment"># Create engine node</span>
+        engine_uri = URIRef(<span class="code-string">f"http://example.com/engine/{row['ENGINE_SN']}"</span>)
+        g.add((engine_uri, RDF.type, MBE.AircraftEngine))
+        
+        <span class="code-comment"># Link identifier to engine</span>
+        g.add((identifier_uri, MBE.designates, engine_uri))
+        
+        <span class="code-comment"># Create defect node</span>
+        defect_uri = URIRef(<span class="code-string">f"http://example.com/defect/{idx}"</span>)
+        g.add((defect_uri, RDF.type, MBE.Defect))
+        g.add((defect_uri, MBE.description, Literal(row[<span class="code-string">'DEFECT_DESC'</span>])))
+        g.add((defect_uri, MBE.severity, Literal(row[<span class="code-string">'SEVERITY'</span>])))
+        g.add((defect_uri, MBE.affectsEngine, engine_uri))
+    
+    <span class="code-keyword">return</span> g
+
+<span class="code-comment"># Load to knowledge graph</span>
+<span class="code-keyword">def</span> <span class="code-function">load_to_knowledge_graph</span>(graph, endpoint_url):
+    <span class="code-comment"># Serialize to Turtle format</span>
+    ttl_data = graph.serialize(format=<span class="code-string">'turtle'</span>)
+    
+    <span class="code-comment"># Upload to SPARQL endpoint (e.g., Apache Jena Fuseki)</span>
+    <span class="code-keyword">import</span> requests
+    response = requests.post(
+        <span class="code-string">f"{endpoint_url}/data"</span>,
+        data=ttl_data,
+        headers={<span class="code-string">'Content-Type'</span>: <span class="code-string">'text/turtle'</span>}
+    )
+    <span class="code-keyword">return</span> response.status_code == <span class="code-string">200</span>
+
+<span class="code-comment"># Execute pipeline</span>
+<span class="code-keyword">if</span> __name__ == <span class="code-string">"__main__"</span>:
+    df = extract_from_database(<span class="code-string">"connection_string_here"</span>)
+    graph = transform_to_ontology(df)
+    success = load_to_knowledge_graph(graph, <span class="code-string">"http://localhost:3030/mbe"</span>)
+    <span class="code-function">print</span>(<span class="code-string">f"Pipeline completed: {success}"</span>)
+            </div>
+
+            <h3>10.2 SPARQL: Query Across Integrated Data</h3>
+            <div class="code-block">
+<span class="code-comment"># Query using ontology concepts, not database details</span>
+<span class="code-keyword">PREFIX</span> mbe: &lt;http://example.com/mbe-ontology#&gt;
+<span class="code-keyword">PREFIX</span> rdf: &lt;http://www.w3.org/1999/02/22-rdf-syntax-ns#&gt;
+
+<span class="code-keyword">SELECT</span> ?engineId ?defectDesc ?maintenanceAction ?actionDate
+<span class="code-keyword">WHERE</span> {
+  <span class="code-comment"># Find engine identifier</span>
+  ?identifier rdf:type mbe:AircraftEngineIdentifier .
+  ?identifier mbe:hasValue ?engineId .
+  ?identifier mbe:designates ?engine .
+  
+  <span class="code-comment"># Find defects for this engine</span>
+  ?defect rdf:type mbe:Defect .
+  ?defect mbe:affectsEngine ?engine .
+  ?defect mbe:description ?defectDesc .
+  
+  <span class="code-comment"># Find maintenance actions</span>
+  ?maintenance rdf:type mbe:MaintenanceWorkOrder .
+  ?maintenance mbe:performedOn ?engine .
+  ?maintenance mbe:action ?maintenanceAction .
+  ?maintenance mbe:completedDate ?actionDate .
+  
+  <span class="code-comment"># Filter for high severity</span>
+  ?defect mbe:severity "High" .
+  
+  <span class="code-comment"># Only recent actions</span>
+  FILTER(?actionDate >= "2025-01-01"^^xsd:date)
+}
+<span class="code-keyword">ORDER BY</span> ?actionDate <span class="code-keyword">DESC</span>
+            </div>
+        </div>
+
+        <!-- Next Steps -->
+        <div class="section">
+            <h2>11. Next Steps: Getting Started</h2>
+
+            <h3>Week 1-2: Assessment & Planning</h3>
+            <ol>
+                <li>Identify 2-3 pilot use cases with high business value</li>
+                <li>Inventory current data sources and systems</li>
+                <li>Assemble core team (ontology engineer, data architect, domain experts)</li>
+                <li>Select initial technology stack</li>
+                <li>Define success criteria and metrics</li>
+            </ol>
+
+            <h3>Week 3-6: Ontology Development</h3>
+            <ol>
+                <li>Conduct domain modeling workshops with SMEs</li>
+                <li>Develop core ontology (15-20 key classes)</li>
+                <li>Document definitions, rationale, and examples</li>
+                <li>Set up ontology repository and version control</li>
+                <li>Validate ontology with stakeholders</li>
+            </ol>
+
+            <h3>Week 7-12: Pilot Implementation</h3>
+            <ol>
+                <li>Map 2-3 critical databases to ontology</li>
+                <li>Set up knowledge graph platform</li>
+                <li>Build initial semantic API endpoints</li>
+                <li>Develop pilot application using semantic layer</li>
+                <li>Test and refine based on user feedback</li>
+            </ol>
+
+            <h3>Month 4+: Scale & Expand</h3>
+            <ol>
+                <li>Onboard additional data sources</li>
+                <li>Expand ontology to new domains</li>
+                <li>Automate mapping discovery</li>
+                <li>Build data catalog and self-service tools</li>
+                <li>Measure and communicate business value</li>
+            </ol>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="section" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border-left: 5px solid #2a5298;">
+            <h2>12. Conclusion</h2>
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                A Model-Based Enterprise architecture with ontologies at its core transforms how organizations manage and leverage data. By creating a <strong>semantic abstraction layer</strong> above physical databases, you achieve:
+            </p>
+            
+            <ul style="font-size: 1.05em; line-height: 1.8;">
+                <li><strong>Unified understanding</strong> of data across the enterprise</li>
+                <li><strong>Seamless integration</strong> without costly data migrations</li>
+                <li><strong>Agility</strong> to add new systems and use cases quickly</li>
+                <li><strong>Intelligence</strong> that enables AI/ML applications</li>
+                <li><strong>Governance</strong> with clear definitions and lineage</li>
+            </ul>
+
+            <p style="font-size: 1.1em; line-height: 1.8;">
+                The key is to <strong>start with a focused pilot</strong>, prove value quickly, and expand incrementally. Ontologies are not just academic exercises—they are practical tools that solve real business problems when implemented correctly.
+            </p>
+
+            <div style="background: white; border-radius: 6px; padding: 20px; margin-top: 20px; text-align: center;">
+                <p style="font-size: 1.2em; font-weight: 600; color: #1e3c72; margin: 0;">
+                    Ready to build your Model-Based Enterprise?
+                </p>
+                <p style="font-size: 1em; color: #666; margin: 10px 0 0 0;">
+                    This architecture provides the foundation—now it's time to execute.
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 30px; color: #999; font-size: 0.9em;">
+            <p>Model-Based Enterprise Implementation Architecture | Version 1.0 | October 2025</p>
+            <p>For questions or feedback on this architecture, contact your Data Architecture team</p>
+        </div>
+
+    </div>
+
+</body>
+</html>
