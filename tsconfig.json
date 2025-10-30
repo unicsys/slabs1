@@ -1,1 +1,50 @@
+PREFIX ockms: <https://ontologyhub.rtx.com/RTXEnterpriseOntologies/OCKMSDigitalThreadOntology/>
+PREFIX iof-core: <https://spec.industrialontologies.org/ontology/core/Core/>
+PREFIX bfo: <http://purl.obolibrary.org/obo/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+SELECT ?defectCode ?defectDesc ?ccaPartNumber
+       (COUNT(?defect) AS ?defectCount)
+       (COUNT(DISTINCT ?ccaSerial) AS ?affectedCCAs)
+       (MIN(?datetime) AS ?firstOccurrence)
+       (MAX(?datetime) AS ?lastOccurrence)
+WHERE {
+  # Get all defects in time window
+  ?recProcess a ockms:DefectRecordingProcess ;
+              bfo:BFO_0000199 ?instant ;
+              iof-core:hasSpecifiedOutput ?classDesc .
+  
+  ?timeValue iof-core:isValueExpressionOfAtSomeTime ?instant ;
+             iof-core:hasDateTimeInstantValue ?datetime .
+  
+  # TIME WINDOW FILTER
+  FILTER(?datetime >= "2025-07-01T00:00:00"^^xsd:dateTime &&   # ← PARAMETER
+         ?datetime <= "2025-07-31T23:59:59"^^xsd:dateTime)      # ← PARAMETER
+  
+  # Get defect classification
+  ?classDesc iof-core:describes ?defect ;
+             ockms:hasTextValue ?defectDesc .
+  
+  ?classCode iof-core:designates ?classDesc ;
+             ockms:hasTextValue ?defectCode .
+  
+  ?defect a ockms:Defect .
+  
+  # Find affected CCA
+  ?component bfo:BFO_0000196 ?defect .
+  
+  ?ccaId a ockms:CircuitCardAssemblyIdentifier ;
+         iof-core:designates ?cca ;
+         ockms:hasTextValue ?ccaSerial .
+  
+  ?designRev iof-core:prescribes ?cca .
+  
+  ?design bfo:BFO_0000110 ?designRev .
+  
+  ?designId iof-core:designates ?design ;
+            ockms:hasTextValue ?ccaPartNumber .
+}
+GROUP BY ?defectCode ?defectDesc ?ccaPartNumber
+HAVING (COUNT(?defect) > 2)
+ORDER BY DESC(?defectCount) ?defectCode ?ccaPartNumber
 
