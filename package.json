@@ -1,14 +1,29 @@
+import requests
+import urllib.parse
+import json
+
+# --- Configuration ---
+# All the settings you need to change are in this section.
+
+# The server where your knowledge graph is hosted
+MOBI_HOST = "https://localhost:8443"
+
+# Your personal key to access the API.
+API_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbW9iaS5jb20vIiwic3ViIjoiYWRtaW4iLCJleHAiOjE3NjE3NjU4ODUsInNjb3BlIjoic2VsZiAvKiJ9.5COMLSTYdyzLutV2lz8A40inxCbLDZ0t5K01uE_ns-M"
+
+# The specific dataset in the knowledge graph you want to query
+RECORD_IRI = "https://mobi.com/records#96e3fd11-0fc5-4c15-b032-165fb2101976"
+
+# This SPARQL query finds all defects recorded within a specific time window.
+# Be sure to edit the dates in the FILTER clause below to match your needs.
+SPARQL_QUERY = """
 PREFIX ockms: <https://ontologyhub.rtx.com/RTXEnterpriseOntologies/OCKMSDigitalThreadOntology/>
 PREFIX iof-core: <https://spec.industrialontologies.org/ontology/core/Core/>
 PREFIX bfo: <http://purl.obolibrary.org/obo/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?datetime 
-       ?defectCode ?defectDesc
-       ?componentPart 
-       ?refDes
-       ?ccaPartNumber ?ccaSerial
+SELECT ?datetime ?defectCode ?defectDesc ?componentPart ?refDes ?ccaPartNumber ?ccaSerial
 WHERE {
   # Get defect recording process with time
   ?recProcess a ockms:DefectRecordingProcess ;
@@ -20,9 +35,8 @@ WHERE {
              iof-core:isValueExpressionOfAtSomeTime ?instant ;
              iof-core:hasDateTimeInstantValue ?datetime .
   
-  # TIME WINDOW FILTER - Change these dates
-  FILTER(?datetime >= "2025-07-01T00:00:00"^^xsd:dateTime && 
-         ?datetime <= "2025-07-31T23:59:59"^^xsd:dateTime)
+  # >> EDIT THIS LINE << - Change the start and end dates for your report
+  FILTER(?datetime >= "2025-07-01T00:00:00"^^xsd:dateTime && ?datetime <= "2025-07-31T23:59:59"^^xsd:dateTime)
   
   # Get defect classification
   ?classDesc a ockms:DefectClassificationDescription ;
@@ -38,7 +52,7 @@ WHERE {
   
   # Get electronic component that has this defect
   ?component a ockms:ElectronicComponent ;
-             bfo:BFO_0000196 ?defect .  # bearer of defect
+             bfo:BFO_0000196 ?defect .
   
   # Get electronic component design (part number)
   ?compDesign a ockms:ElectronicComponentDesign ;
@@ -49,7 +63,7 @@ WHERE {
                 ockms:hasTextValue ?componentPart .
   
   # Get reference designator (location)
-  ?component bfo:BFO_0000171 ?location .  # located in at some time
+  ?component bfo:BFO_0000171 ?location .
   
   ?refDesId a ockms:ReferenceDesignator ;
             iof-core:designates ?location ;
@@ -67,11 +81,93 @@ WHERE {
              iof-core:prescribes ?cca .
   
   ?design a ockms:CircuitCardAssemblyDesign ;
-          bfo:BFO_0000110 ?designRev .  # has continuant part at all times
+          bfo:BFO_0000110 ?designRev .
   
   ?designId a ockms:CircuitCardAssemblyDesignIdentifier ;
             iof-core:designates ?design ;
             ockms:hasTextValue ?ccaPartNumber .
 }
 ORDER BY ?datetime ?ccaSerial ?refDes
+"""
 
+def print_results_table(results_json):
+    """
+    Parses the JSON from a SPARQL query and prints it as a nicely formatted table.
+    """
+    try:
+        headers = results_json['head']['vars']
+        bindings = results_json['results']['bindings']
+
+        if not bindings:
+            print("Query returned no results.")
+            return
+
+        # Create a list of lists for our data, starting with the headers
+        data = [headers]
+        for item in bindings:
+            row = [item.get(header, {}).get('value', '') for header in headers]
+            data.append(row)
+
+        # Figure out the maximum width needed for each column
+        column_widths = [max(len(str(item)) for item in col) for col in zip(*data)]
+
+        # --- Print the formatted table ---
+        
+        # 1. Print the header
+        header_line = "  ".join(f"{h:<{w}}" for h, w in zip(headers, column_widths))
+        print(header_line)
+
+        # 2. Print the separator
+        separator_line = "  ".join("-" * w for w in column_widths)
+        print(separator_line)
+
+        # 3. Print each row of data
+        for i in range(1, len(data)):
+            row_line = "  ".join(f"{data[i][j]:<{column_widths[j]}}" for j in range(len(headers)))
+            print(row_line)
+
+    except (KeyError, TypeError) as e:
+        print(f"Could not parse the JSON response. Error: {e}")
+        print("--- Raw Response ---")
+        print(json.dumps(results_json, indent=2))
+
+
+# --- Main Script ---
+
+# Build the full URL for the API endpoint
+encoded_iri = urllib.parse.quote(RECORD_IRI, safe='')
+url = f"{MOBI_HOST}/mobirest/sparql/dataset-record/{encoded_iri}/limited-results"
+
+# Prepare the headers for our request
+headers = {
+    'Cookie': f'mobi_web_token={API_TOKEN}',
+    'Accept': 'application/json',
+    'Content-Type': 'application/x-www-form-urlencoded'
+}
+
+print(f"Sending SPARQL query to: {RECORD_IRI}")
+
+try:
+    # Disable warnings for self-signed certificates in development
+    requests.packages.urllib3.disable_warnings()
+    
+    # Send the request to the server
+    response = requests.post(url, headers=headers, data={'query': SPARQL_QUERY}, verify=False)
+    
+    # Raise an error if the request failed
+    response.raise_for_status()
+    
+    # If successful, parse the JSON and print the formatted table
+    print("\n--- Query Results ---")
+    results = response.json()
+    print_results_table(results)
+
+except requests.exceptions.RequestException as e:
+    print(f"\nError during API request: {e}")
+    if hasattr(e, 'response') and e.response:
+        print(f"Server response: {e.response.text}")
+
+except json.JSONDecodeError:
+    print("\nError: Could not decode the server's JSON response.")
+    print("--- Raw Response Text ---")
+    print(response.text)
