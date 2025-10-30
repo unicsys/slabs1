@@ -1,6 +1,7 @@
 import requests
 import urllib.parse
 import json
+import os
 
 # --- Configuration ---
 # All the settings you need to change are in this section.
@@ -90,46 +91,72 @@ WHERE {
 ORDER BY ?datetime ?ccaSerial ?refDes
 """
 
-def print_results_table(results_json):
+def generate_html_report(results_json, filename="defect_report.html"):
     """
-    Parses the JSON from a SPARQL query and prints it as a nicely formatted table.
+    Takes the SPARQL JSON result and generates a simple, self-contained HTML file.
     """
     try:
         headers = results_json['head']['vars']
         bindings = results_json['results']['bindings']
 
+        # Start building the HTML string
+        html = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Defect Report</title>
+            <style>
+                body {{ font-family: sans-serif; }}
+                table {{ border-collapse: collapse; width: 100%; margin: 20px 0; }}
+                th, td {{ border: 1px solid #dddddd; text-align: left; padding: 8px; }}
+                th {{ background-color: #f2f2f2; }}
+                tr:nth-child(even) {{ background-color: #f9f9f9; }}
+                h1 {{ color: #333; }}
+            </style>
+        </head>
+        <body>
+            <h1>Defect Report</h1>
+        """
+
         if not bindings:
-            print("Query returned no results.")
-            return
+            html += "<p>Query returned no results.</p>"
+        else:
+            html += "<table>\n"
+            # Create table header
+            html += "  <thead>\n    <tr>\n"
+            for header in headers:
+                html += f"      <th>{header}</th>\n"
+            html += "    </tr>\n  </thead>\n"
 
-        # Create a list of lists for our data, starting with the headers
-        data = [headers]
-        for item in bindings:
-            row = [item.get(header, {}).get('value', '') for header in headers]
-            data.append(row)
-
-        # Figure out the maximum width needed for each column
-        column_widths = [max(len(str(item)) for item in col) for col in zip(*data)]
-
-        # --- Print the formatted table ---
+            # Create table body
+            html += "  <tbody>\n"
+            for item in bindings:
+                html += "    <tr>\n"
+                for header in headers:
+                    value = item.get(header, {}).get('value', 'N/A')
+                    html += f"      <td>{value}</td>\n"
+                html += "    </tr>\n"
+            html += "  </tbody>\n"
+            html += "</table>"
         
-        # 1. Print the header
-        header_line = "  ".join(f"{h:<{w}}" for h, w in zip(headers, column_widths))
-        print(header_line)
+        html += """
+        </body>
+        </html>
+        """
 
-        # 2. Print the separator
-        separator_line = "  ".join("-" * w for w in column_widths)
-        print(separator_line)
-
-        # 3. Print each row of data
-        for i in range(1, len(data)):
-            row_line = "  ".join(f"{data[i][j]:<{column_widths[j]}}" for j in range(len(headers)))
-            print(row_line)
+        # Write the HTML string to a file
+        with open(filename, 'w') as f:
+            f.write(html)
+        
+        # Get the full path for a more helpful message
+        full_path = os.path.abspath(filename)
+        print(f"\nSuccessfully created HTML report!")
+        print(f"Report saved to: {full_path}")
 
     except (KeyError, TypeError) as e:
-        print(f"Could not parse the JSON response. Error: {e}")
-        print("--- Raw Response ---")
-        print(json.dumps(results_json, indent=2))
+        print(f"Could not parse the JSON response to create HTML. Error: {e}")
 
 
 # --- Main Script ---
@@ -157,10 +184,9 @@ try:
     # Raise an error if the request failed
     response.raise_for_status()
     
-    # If successful, parse the JSON and print the formatted table
-    print("\n--- Query Results ---")
+    # If successful, parse the JSON and generate the HTML report
     results = response.json()
-    print_results_table(results)
+    generate_html_report(results)
 
 except requests.exceptions.RequestException as e:
     print(f"\nError during API request: {e}")
