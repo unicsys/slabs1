@@ -1,1 +1,77 @@
+PREFIX ockms: <https://ontologyhub.rtx.com/RTXEnterpriseOntologies/OCKMSDigitalThreadOntology/>
+PREFIX iof-core: <https://spec.industrialontologies.org/ontology/core/Core/>
+PREFIX bfo: <http://purl.obolibrary.org/obo/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?datetime 
+       ?defectCode ?defectDesc
+       ?componentPart 
+       ?refDes
+       ?ccaPartNumber ?ccaSerial
+WHERE {
+  # Get defect recording process with time
+  ?recProcess a ockms:DefectRecordingProcess ;
+              bfo:BFO_0000199 ?instant ;
+              iof-core:hasSpecifiedOutput ?classDesc .
+  
+  # Get datetime value
+  ?timeValue a iof-core:TemporalInstantValueExpression ;
+             iof-core:isValueExpressionOfAtSomeTime ?instant ;
+             iof-core:hasDateTimeInstantValue ?datetime .
+  
+  # TIME WINDOW FILTER - Change these dates
+  FILTER(?datetime >= "2025-07-01T00:00:00"^^xsd:dateTime && 
+         ?datetime <= "2025-07-31T23:59:59"^^xsd:dateTime)
+  
+  # Get defect classification
+  ?classDesc a ockms:DefectClassificationDescription ;
+             iof-core:describes ?defect ;
+             ockms:hasTextValue ?defectDesc .
+  
+  ?classCode a ockms:DefectClassificationCode ;
+             iof-core:designates ?classDesc ;
+             ockms:hasTextValue ?defectCode .
+  
+  # Get the defect
+  ?defect a ockms:Defect .
+  
+  # Get electronic component that has this defect
+  ?component a ockms:ElectronicComponent ;
+             bfo:BFO_0000196 ?defect .  # bearer of defect
+  
+  # Get electronic component design (part number)
+  ?compDesign a ockms:ElectronicComponentDesign ;
+              iof-core:prescribes ?component .
+  
+  ?compDesignId a ockms:ElectronicComponentDesignIdentifier ;
+                iof-core:designates ?compDesign ;
+                ockms:hasTextValue ?componentPart .
+  
+  # Get reference designator (location)
+  ?component bfo:BFO_0000171 ?location .  # located in at some time
+  
+  ?refDesId a ockms:ReferenceDesignator ;
+            iof-core:designates ?location ;
+            ockms:hasTextValue ?refDes .
+  
+  # Get CCA serial number
+  ?ccaId a ockms:CircuitCardAssemblyIdentifier ;
+         iof-core:designates ?cca ;
+         ockms:hasTextValue ?ccaSerial .
+  
+  ?cca a ockms:CircuitCardAssembly .
+  
+  # Get CCA design (part number)
+  ?designRev a ockms:CircuitCardAssemblyDesignRevision ;
+             iof-core:prescribes ?cca .
+  
+  ?design a ockms:CircuitCardAssemblyDesign ;
+          bfo:BFO_0000110 ?designRev .  # has continuant part at all times
+  
+  ?designId a ockms:CircuitCardAssemblyDesignIdentifier ;
+            iof-core:designates ?design ;
+            ockms:hasTextValue ?ccaPartNumber .
+}
+ORDER BY ?datetime ?ccaSerial ?refDes
 
