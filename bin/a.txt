@@ -1,1 +1,317 @@
+from rdflib import Graph, URIRef, Namespace
+from rdflib.namespace import RDF, RDFS, OWL
+from collections import defaultdict, Counter
+import csv
+import sys
 
+# === CONFIGURATION ===
+INPUT_FILE = "QualityNotificationAnalyticsOntology(1).ttl"  # <-- Change this to your file path
+OUTPUT_PREFIX = "ontology_analysis"  # Prefix for output files
+
+# === Helper Functions ===
+def get_namespace(uri_ref):
+    """Extract the namespace from a URI"""
+    uri = str(uri_ref)
+    if '#' in uri:
+        return uri.rsplit('#', 1)[0] + '#'
+    else:
+        return uri.rsplit('/', 1)[0] + '/'
+
+def get_local_name(uri_ref):
+    """Extract the local name from a URI"""
+    uri = str(uri_ref)
+    if '#' in uri:
+        return uri.rsplit('#', 1)[1]
+    else:
+        return uri.rsplit('/', 1)[1]
+
+def get_namespace_prefix(namespace, bound_namespaces):
+    """Get the prefix for a namespace if it's bound in the graph"""
+    for prefix, ns in bound_namespaces:
+        if str(ns) == namespace:
+            return prefix
+    return None
+
+# === 1. Load Ontology ===
+print("="*80)
+print("ONTOLOGY NAMESPACE ANALYZER")
+print("="*80)
+print(f"\nLoading ontology from: {INPUT_FILE}")
+
+try:
+    g = Graph()
+    g.parse(INPUT_FILE, format="turtle")
+    print(f"✓ Successfully loaded {len(g)} triples")
+except Exception as e:
+    print(f"✗ Error loading file: {e}")
+    sys.exit(1)
+
+# Get bound namespaces from the graph
+bound_namespaces = list(g.namespaces())
+print(f"✓ Found {len(bound_namespaces)} declared namespace prefixes")
+
+# === 2. Initialize Data Structures ===
+classes = defaultdict(list)
+object_properties = defaultdict(list)
+data_properties = defaultdict(list)
+annotation_properties = defaultdict(list)
+individuals = defaultdict(list)
+
+# Additional tracking
+namespace_prefixes = {}
+all_triples_by_ns = Counter()
+
+# === 3. Extract Classes ===
+print("\n" + "-"*80)
+print("Extracting entities...")
+print("-"*80)
+
+# Classes
+class_count = 0
+for s in g.subjects(RDF.type, OWL.Class):
+    if isinstance(s, URIRef):
+        ns = get_namespace(s)
+        local = get_local_name(s)
+        classes[ns].append(local)
+        class_count += 1
+
+for s in g.subjects(RDF.type, RDFS.Class):
+    if isinstance(s, URIRef):
+        ns = get_namespace(s)
+        local = get_local_name(s)
+        if local not in classes[ns]:
+            classes[ns].append(local)
+            class_count += 1
+
+print(f"✓ Extracted {class_count} classes from {len(classes)} namespaces")
+
+# Object Properties
+obj_prop_count = 0
+for s in g.subjects(RDF.type, OWL.ObjectProperty):
+    if isinstance(s, URIRef):
+        ns = get_namespace(s)
+        local = get_local_name(s)
+        object_properties[ns].append(local)
+        obj_prop_count += 1
+
+print(f"✓ Extracted {obj_prop_count} object properties from {len(object_properties)} namespaces")
+
+# Data Properties
+data_prop_count = 0
+for s in g.subjects(RDF.type, OWL.DatatypeProperty):
+    if isinstance(s, URIRef):
+        ns = get_namespace(s)
+        local = get_local_name(s)
+        data_properties[ns].append(local)
+        data_prop_count += 1
+
+print(f"✓ Extracted {data_prop_count} data properties from {len(data_properties)} namespaces")
+
+# Annotation Properties
+ann_prop_count = 0
+for s in g.subjects(RDF.type, OWL.AnnotationProperty):
+    if isinstance(s, URIRef):
+        ns = get_namespace(s)
+        local = get_local_name(s)
+        annotation_properties[ns].append(local)
+        ann_prop_count += 1
+
+print(f"✓ Extracted {ann_prop_count} annotation properties from {len(annotation_properties)} namespaces")
+
+# Individuals
+individual_count = 0
+for s in g.subjects(RDF.type, OWL.NamedIndividual):
+    if isinstance(s, URIRef):
+        ns = get_namespace(s)
+        local = get_local_name(s)
+        individuals[ns].append(local)
+        individual_count += 1
+
+print(f"✓ Extracted {individual_count} individuals from {len(individuals)} namespaces")
+
+# === 4. Analyze all triples for namespace usage ===
+print("\nAnalyzing all triples for namespace usage...")
+for s, p, o in g:
+    for node in [s, p, o]:
+        if isinstance(node, URIRef):
+            ns = get_namespace(node)
+            all_triples_by_ns[ns] += 1
+
+# === 5. Build namespace info ===
+all_namespaces = set()
+all_namespaces.update(classes.keys())
+all_namespaces.update(object_properties.keys())
+all_namespaces.update(data_properties.keys())
+all_namespaces.update(annotation_properties.keys())
+all_namespaces.update(individuals.keys())
+
+# Map prefixes
+for ns in all_namespaces:
+    prefix = get_namespace_prefix(ns, bound_namespaces)
+    namespace_prefixes[ns] = prefix if prefix else "N/A"
+
+# === 6. Print Statistics ===
+print("\n" + "="*80)
+print("SUMMARY STATISTICS")
+print("="*80)
+
+print(f"\nTotal unique namespaces: {len(all_namespaces)}")
+print(f"Total classes: {class_count}")
+print(f"Total object properties: {obj_prop_count}")
+print(f"Total data properties: {data_prop_count}")
+print(f"Total annotation properties: {ann_prop_count}")
+print(f"Total individuals: {individual_count}")
+print(f"Total entities: {class_count + obj_prop_count + data_prop_count + ann_prop_count + individual_count}")
+
+print("\n" + "="*80)
+print("NAMESPACE DETAILS")
+print("="*80)
+
+for ns in sorted(all_namespaces, key=lambda x: sum([
+    len(classes.get(x, [])),
+    len(object_properties.get(x, [])),
+    len(data_properties.get(x, [])),
+    len(annotation_properties.get(x, [])),
+    len(individuals.get(x, []))
+]), reverse=True):
+    
+    prefix = namespace_prefixes.get(ns, "N/A")
+    total_entities = (len(classes.get(ns, [])) + 
+                     len(object_properties.get(ns, [])) + 
+                     len(data_properties.get(ns, [])) + 
+                     len(annotation_properties.get(ns, [])) +
+                     len(individuals.get(ns, [])))
+    
+    print(f"\n{'─'*80}")
+    print(f"Namespace: {ns}")
+    print(f"Prefix: {prefix}")
+    print(f"  Classes: {len(classes.get(ns, []))}")
+    print(f"  Object Properties: {len(object_properties.get(ns, []))}")
+    print(f"  Data Properties: {len(data_properties.get(ns, []))}")
+    print(f"  Annotation Properties: {len(annotation_properties.get(ns, []))}")
+    print(f"  Individuals: {len(individuals.get(ns, []))}")
+    print(f"  Total Entities: {total_entities}")
+    print(f"  Total Triple References: {all_triples_by_ns.get(ns, 0)}")
+
+# === 7. Export CSV Files ===
+print("\n" + "="*80)
+print("EXPORTING TO CSV FILES")
+print("="*80)
+
+# CSV 1: Summary by Namespace with Prefixes
+with open(f"{OUTPUT_PREFIX}_summary.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Namespace", "Prefix", "Classes", "Object Properties", 
+                     "Data Properties", "Annotation Properties", "Individuals", 
+                     "Total Entities", "Triple References"])
+    
+    for ns in sorted(all_namespaces):
+        prefix = namespace_prefixes.get(ns, "N/A")
+        num_classes = len(classes.get(ns, []))
+        num_obj_props = len(object_properties.get(ns, []))
+        num_data_props = len(data_properties.get(ns, []))
+        num_ann_props = len(annotation_properties.get(ns, []))
+        num_individuals = len(individuals.get(ns, []))
+        total = num_classes + num_obj_props + num_data_props + num_ann_props + num_individuals
+        triple_refs = all_triples_by_ns.get(ns, 0)
+        
+        writer.writerow([ns, prefix, num_classes, num_obj_props, num_data_props, 
+                        num_ann_props, num_individuals, total, triple_refs])
+
+print(f"✓ Saved '{OUTPUT_PREFIX}_summary.csv'")
+
+# CSV 2: Detailed - All Entities
+with open(f"{OUTPUT_PREFIX}_detailed.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Namespace", "Prefix", "Entity Type", "Local Name", "Full URI"])
+    
+    for ns in sorted(all_namespaces):
+        prefix = namespace_prefixes.get(ns, "N/A")
+        
+        for cls in sorted(classes.get(ns, [])):
+            writer.writerow([ns, prefix, "Class", cls, ns + cls])
+        
+        for prop in sorted(object_properties.get(ns, [])):
+            writer.writerow([ns, prefix, "Object Property", prop, ns + prop])
+        
+        for prop in sorted(data_properties.get(ns, [])):
+            writer.writerow([ns, prefix, "Data Property", prop, ns + prop])
+        
+        for prop in sorted(annotation_properties.get(ns, [])):
+            writer.writerow([ns, prefix, "Annotation Property", prop, ns + prop])
+        
+        for ind in sorted(individuals.get(ns, [])):
+            writer.writerow([ns, prefix, "Individual", ind, ns + ind])
+
+print(f"✓ Saved '{OUTPUT_PREFIX}_detailed.csv'")
+
+# CSV 3: Classes Only
+with open(f"{OUTPUT_PREFIX}_classes.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Namespace", "Prefix", "Class Name", "Full URI"])
+    
+    for ns in sorted(classes.keys()):
+        prefix = namespace_prefixes.get(ns, "N/A")
+        for cls in sorted(classes[ns]):
+            writer.writerow([ns, prefix, cls, ns + cls])
+
+print(f"✓ Saved '{OUTPUT_PREFIX}_classes.csv'")
+
+# CSV 4: Properties by Type
+with open(f"{OUTPUT_PREFIX}_properties.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Namespace", "Prefix", "Property Type", "Property Name", "Full URI"])
+    
+    for ns in sorted(all_namespaces):
+        prefix = namespace_prefixes.get(ns, "N/A")
+        
+        for prop in sorted(object_properties.get(ns, [])):
+            writer.writerow([ns, prefix, "Object Property", prop, ns + prop])
+        for prop in sorted(data_properties.get(ns, [])):
+            writer.writerow([ns, prefix, "Data Property", prop, ns + prop])
+        for prop in sorted(annotation_properties.get(ns, [])):
+            writer.writerow([ns, prefix, "Annotation Property", prop, ns + prop])
+
+print(f"✓ Saved '{OUTPUT_PREFIX}_properties.csv'")
+
+# CSV 5: Namespace Prefixes Mapping
+with open(f"{OUTPUT_PREFIX}_namespace_mappings.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Prefix", "Namespace", "Total Entities", "Triple References"])
+    
+    for ns in sorted(all_namespaces):
+        prefix = namespace_prefixes.get(ns, "N/A")
+        total = (len(classes.get(ns, [])) + len(object_properties.get(ns, [])) + 
+                len(data_properties.get(ns, [])) + len(annotation_properties.get(ns, [])) +
+                len(individuals.get(ns, [])))
+        triple_refs = all_triples_by_ns.get(ns, 0)
+        writer.writerow([prefix, ns, total, triple_refs])
+
+print(f"✓ Saved '{OUTPUT_PREFIX}_namespace_mappings.csv'")
+
+# CSV 6: Individuals (if any)
+if individuals:
+    with open(f"{OUTPUT_PREFIX}_individuals.csv", "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Namespace", "Prefix", "Individual Name", "Full URI"])
+        
+        for ns in sorted(individuals.keys()):
+            prefix = namespace_prefixes.get(ns, "N/A")
+            for ind in sorted(individuals[ns]):
+                writer.writerow([ns, prefix, ind, ns + ind])
+    
+    print(f"✓ Saved '{OUTPUT_PREFIX}_individuals.csv'")
+
+print("\n" + "="*80)
+print("EXPORT COMPLETE!")
+print("="*80)
+print("\nGenerated files:")
+print(f"  1. {OUTPUT_PREFIX}_summary.csv - Summary with counts and prefixes")
+print(f"  2. {OUTPUT_PREFIX}_detailed.csv - All entities with full details")
+print(f"  3. {OUTPUT_PREFIX}_classes.csv - All classes grouped by namespace")
+print(f"  4. {OUTPUT_PREFIX}_properties.csv - All properties by type")
+print(f"  5. {OUTPUT_PREFIX}_namespace_mappings.csv - Prefix to namespace mappings")
+if individuals:
+    print(f"  6. {OUTPUT_PREFIX}_individuals.csv - All individuals")
+
+print("\n" + "="*80)
