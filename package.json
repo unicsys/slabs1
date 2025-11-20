@@ -1,1 +1,9 @@
+# Test 1: Look for specific material
+chat_offline("What happened with the Wheel Assembly?")
+
+# Test 2: Look for a person
+chat_offline("Did Sarah Williams sign off on the traveler?")
+
+# Test 3: Look for an issue type
+chat_offline("Summarize the issue with the wrong delivery address.")
 
