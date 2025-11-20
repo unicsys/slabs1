@@ -1,164 +1,105 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { Stage, Layer } from 'react-konva';
-import { Block, Connector, DiagramState, Point } from '../types/diagram';
-import { BlockShape } from './BlockShape';
-import { ConnectorLine } from './ConnectorLine';
-import { v4 as uuidv4 } from 'uuid';
-import { ToolType } from '../components/Toolbar';
+import csv
 
-interface DiagramCanvasProps {
-  selectedTool: ToolType;
-}
+csv_data = """PROBLEM_CODE_TEXT,DESCRIPTION,MATERIAL,MATERIAL_DESCRIPTION,LONG_TEXT
+"Documentation/Paperwork","MISSING CERT PACKAGE","WHL-8844","WHEEL ASSEMBLY","03/09/2024 09:12:24 GMT Patrick Jackson (C28091905) 03.09.2024 09:01:10 GMT John Smith (008008) Non-conforming Part Number(detail) including configuration = 157-301-888,,WHEEL ASSEMBLY MAIN GEAR. SUPPLIER WAS SUPPOSED TO INCLUDE CERTIFICATION PACKAGE PER PO REQUIREMENTS. PACKAGE NOT FOUND IN SHIPMENT. CONTACTED SUPPLIER AND THEY CONFIRMED THEY WILL SEND VIA EMAIL BY END OF DAY. Part Sn(s):,,WH-5521, WH-5522, WH-5523 Eng. Drawing:,,334-PLT-001 Rev C NOTE: PARTS ARE IN RECEIVING HOLD AREA UNTIL PAPERWORK ARRIVES. INSPECTOR CONFIRMED QUANTITY AND PART NUMBERS MATCH PO. 03/10/2024 08:15:33 GMT Patrick Jackson (C28091905) RECEIVED EMAIL WITH CERTIFICATION PACKAGE. MRB/QA REVIEWED AND APPROVED FOR RELEASE TO STOCK."
+"Process Issue","TRAVELER INCOMPLETE","BLK-7733","BLOCK, MOUNTING","04/15/2024 14:22:18 GMT Sarah Williams (C29182304) 04.15.2024 14:10:05 GMT Mike Torres (009123) Part Number = 445-889-223,,MOUNTING BLOCK ASSY. MANUFACTURING TRAVELER WAS MISSING SUPERVISOR SIGNATURE ON PAGE 3 OF 5. OPERATIONS MANAGER STATES THAT SUPERVISOR WAS ON VACATION LAST WEEK WHEN PARTS WERE COMPLETED. Part Sn(s):,,BLK-9921 Eng. Drawing:,,445-889-223-001 ACTUAL: SUPERVISOR SIGNATURE MISSING FROM FINAL INSPECTION SECTION. NOTE: ALL INSPECTION STAMPS ARE PRESENT AND DATED CORRECTLY. PART APPEARS TO HAVE BEEN PROPERLY INSPECTED. REF: TRAVELER SHOWS COMPLETION DATE OF 04/08/2024. 04/16/2024 09:30:12 GMT Sarah Williams (C29182304) SUPERVISOR RETURNED FROM VACATION AND REVIEWED TRAVELER. SIGNED OFF WITH NOTE EXPLAINING LATE SIGNATURE. MRB/QA CONCURS WITH DISPOSITION."
+"Administrative","PO REVISION NOT COMMUNICATED","STR-6655","STRUCTURAL BEAM","05/20/2024 10:45:33 GMT David Kim (C30293405) 05.20.2024 10:30:22 GMT Lisa Anderson (010234) Non-conforming Part Number = 778-223-445,,BEAM STRUCTURAL FWD. SUPPLIER MANUFACTURED TO ORIGINAL PO REV A BUT CUSTOMER HAD ISSUED REV B LAST MONTH. PURCHASING DEPARTMENT DID NOT SEND UPDATED PO TO SUPPLIER. SUPPLIER STATES THEY NEVER RECEIVED REV B. Part Sn(s):,,STR-8821, STR-8822 Eng. Drawing:,,778-223-445 Rev D NOTE: PARTS WERE MANUFACTURED PER REV A REQUIREMENTS. REV B ONLY CHANGED DELIVERY DATE AND PACKAGING INSTRUCTIONS. NO DESIGN CHANGES BETWEEN REVISIONS. 05/21/2024 11:20:15 GMT David Kim (C30293405) ENGINEERING CONFIRMED NO TECHNICAL CHANGES IN PO REV B. PARTS ACCEPTABLE FOR USE. PURCHASING WILL UPDATE INTERNAL PROCEDURES TO PREVENT SIMILAR ISSUES."
+"Supplier Communication","WRONG DELIVERY ADDRESS","PIN-9944","PIN ASSEMBLY","06/08/2024 13:15:44 GMT Rachel Green (C31304506) 06.08.2024 13:00:33 GMT Tom Bradley (011345) Part Number(detail) = 223-556-889,,PIN ASSY CLEVIS TYPE. SUPPLIER SHIPPED PARTS TO OLD FACILITY ADDRESS INSTEAD OF NEW WAREHOUSE. SHIPPING LABEL SHOWS INCORRECT ADDRESS. CARRIER ATTEMPTED DELIVERY TO CLOSED FACILITY. Part Sn(s):,,MULTIPLE SERIALS IN SHIPMENT Eng. Drawing:,,223-556-889-002 ACTUAL: SHIPMENT SENT TO 1234 OLD STREET INSTEAD OF 5678 NEW AVENUE. NOTE: SUPPLIER USED OUTDATED ADDRESS FROM PREVIOUS PO. NEW ADDRESS WAS PROVIDED IN CURRENT PO HEADER. CARRIER REDIRECTED SHIPMENT AFTER CONTACTING US. REF: EXPECTED DELIVERY NOW DELAYED BY THREE BUSINESS DAYS. 06/11/2024 08:45:21 GMT Rachel Green (C31304506) PARTS RECEIVED AT CORRECT LOCATION. SUPPLIER HAS UPDATED THEIR RECORDS WITH NEW ADDRESS. QA CLEARED FOR RECEIPT PROCESSING."
+"Training Issue","OPERATOR CERT EXPIRED","CBL-8877","CABLE HARNESS","07/14/2024 11:30:25 GMT Jessica Martinez (C32415607) 07.14.2024 11:15:14 GMT Carlos Ruiz (012456) Non-conforming Part Number = 889-445-223,,CABLE HARNESS 25 FT. QUALITY AUDIT DISCOVERED THAT OPERATOR WHO WORKED ON THIS ASSEMBLY HAD EXPIRED CERTIFICATION. OPERATOR BADGE 5521 CERTIFICATION EXPIRED ON 06/30/2024. PARTS WERE ASSEMBLED ON 07/10/2024. Part Sn(s):,,CH-7755, CH-7756, CH-7757, CH-7758 Eng. Drawing:,,889-445-223 NOTE: OPERATOR WAS SCHEDULED FOR RECERTIFICATION CLASS BUT CLASS WAS POSTPONED DUE TO TRAINER AVAILABILITY. OPERATOR CONTINUED WORKING ASSUMING EXTENSION WAS APPROVED BUT NO FORMAL EXTENSION WAS DOCUMENTED. REF: QUALITY MANUAL REQUIRES CURRENT CERTIFICATION FOR ALL ASSEMBLY OPERATIONS. 07/15/2024 14:20:18 GMT Jessica Martinez (C32415607) OPERATOR COMPLETED RECERTIFICATION YESTERDAY. ALL AFFECTED ASSEMBLIES PULLED FOR RE-INSPECTION PER PROCEDURE. MRB WILL REVIEW INSPECTION RESULTS."
+"Scheduling Conflict","PARTS ON HOLD FOR CUSTOMER REVIEW","FRM-7722","FRAME WELDMENT","08/22/2024 09:55:37 GMT Robert Chen (C33526708) 08.22.2024 09:40:26 GMT Diana Lopez (013567) Part Number(detail) including configuration = 556-889-112,,FRAME WELD ASSY MAIN. CUSTOMER REQUESTED TO REVIEW PARTS BEFORE FINAL ACCEPTANCE DUE TO PREVIOUS ISSUES WITH DIFFERENT LOT. NO DEFECTS FOUND ON THESE PARTS BUT CUSTOMER WANTS TO INSPECT IN PERSON. Part Sn(s):,,FRM-5521 THROUGH FRM-5530 (10 PIECES) Eng. Drawing:,,556-889-112-003 Rev F ACTUAL: PARTS COMPLETED AND PASSED ALL INTERNAL INSPECTIONS ON 08/20/2024. NOTE: CUSTOMER VISIT SCHEDULED FOR 08/28/2024. PARTS STAGED IN INSPECTION AREA FOR CUSTOMER ACCESS. SHIPMENT ON HOLD PENDING CUSTOMER APPROVAL. REF: CUSTOMER PO DOES NOT REQUIRE SOURCE INSPECTION BUT THEY REQUESTED THIS AS COURTESY REVIEW. 08/29/2024 10:30:44 GMT Robert Chen (C33526708) CUSTOMER COMPLETED REVIEW YESTERDAY. CUSTOMER REPRESENTATIVE SIGNED OFF ON ACCEPTANCE FORM. APPROVED FOR SHIPMENT."
+"Records Management","FILES MISFILED IN SYSTEM","GSK-6633","GASKET KIT","09/18/2024 15:10:29 GMT Amanda White (C34637809) 09.18.2024 14:55:18 GMT Kevin Park (014678) Non-conforming Part Number = 334-667-889,,GASKET KIT COMPLETE. MONTHLY AUDIT FOUND THAT MANUFACTURING RECORDS FOR THIS LOT WERE FILED UNDER WRONG PART NUMBER IN DOCUMENT SYSTEM. RECORDS SHOW GSK-6632 BUT SHOULD BE GSK-6633. Part Sn(s):,,LOT L-8821 (APPROX 200 PIECES) Eng. Drawing:,,334-667-889 NOTE: ALL RECORDS ARE COMPLETE AND SIGNED. ONLY ISSUE IS FILING ERROR IN DATABASE. RECORDS CLERK STATES THAT PART NUMBERS ARE VERY SIMILAR AND ERROR WAS NOT CAUGHT DURING INITIAL FILING. ACTUAL: RECORDS CURRENTLY UNDER FOLDER FOR GSK-6632. REF: CUSTOMER MAY REQUEST RECORDS PACKAGE AND WE NEED TO ENSURE EASY RETRIEVAL. 09/19/2024 08:45:33 GMT Amanda White (C34637809) RECORDS CLERK CORRECTED FILING IN SYSTEM. SPOT CHECK CONFIRMS RECORDS NOW PROPERLY CATEGORIZED. QA CLOSED FINDING."
+"Customer Communication","CUSTOMER INQUIRY NOT LOGGED","BRG-5544","BEARING MOUNT","10/25/2024 13:25:41 GMT Michael Foster (C35748910) 10.25.2024 13:10:30 GMT Susan Phillips (015789) Part Number = 667-889-445,,BEARING MOUNT HOUSING. CUSTOMER SENT EMAIL LAST WEEK ASKING ABOUT DELIVERY STATUS BUT EMAIL WAS NOT LOGGED IN CUSTOMER SERVICE SYSTEM. CUSTOMER CALLED TODAY ASKING WHY NO RESPONSE. Part Sn(s):,,NOT APPLICABLE - GENERAL INQUIRY Eng. Drawing:,,667-889-445-001 ACTUAL: EMAIL WENT TO GENERAL INBOX THAT IS NOT REGULARLY MONITORED. NOTE: CUSTOMER SERVICE PROTOCOL REQUIRES ALL CUSTOMER COMMUNICATIONS BE LOGGED WITHIN 24 HOURS. THIS INQUIRY WAS NOT LOGGED FOR ONE WEEK. REF: ORDER IS ON SCHEDULE AND WAS SET TO SHIP NEXT WEEK AS ORIGINALLY PLANNED. 10/25/2024 16:40:22 GMT Michael Foster (C35748910) CONTACTED CUSTOMER AND APOLOGIZED FOR DELAY IN RESPONSE. PROVIDED FULL STATUS UPDATE. CUSTOMER SATISFIED WITH EXPLANATION. IT DEPARTMENT SETTING UP EMAIL FORWARDING TO PREVENT FUTURE OCCURRENCES."
+"""
 
-export const DiagramCanvas: React.FC<DiagramCanvasProps> = ({ selectedTool }) => {
-  const [stageSize, setStageSize] = useState({ width: 0, height: 0 });
-  const [diagramState, setDiagramState] = useState<DiagramState>({
-    blocks: [],
-    connectors: [],
-    selectedElement: null,
-  });
-  const [connectingFrom, setConnectingFrom] = useState<string | null>(null);
+with open("quality_data.csv", "w") as f:
+    f.write(csv_data)
 
-  // Handle window resize
-  useEffect(() => {
-    const updateSize = () => {
-      const container = document.querySelector('.konvajs-content')?.parentElement;
-      if (container) {
-        setStageSize({
-          width: container.clientWidth,
-          height: container.clientHeight,
-        });
-      }
-    };
+print("✅ CSV created.")
 
-    window.addEventListener('resize', updateSize);
-    // Initial size update
-    setTimeout(updateSize, 0);
 
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
+------------
+import pandas as pd
+import faiss
+from sentence_transformers import SentenceTransformer
 
-  const handleStageClick = useCallback((e: any) => {
-    // Get the click position relative to the stage
-    const stage = e.target.getStage();
-    const pointerPosition = stage.getPointerPosition();
+# 1. Load Data
+df = pd.read_csv("quality_data.csv")
+
+# CRITICAL STEP: Combine columns into one "searchable" block
+# This ensures that if you search for "WHEEL ASSEMBLY", the model also sees the associated LONG_TEXT
+df['combined_context'] = (
+    "ISSUE: " + df['PROBLEM_CODE_TEXT'] + "\n" +
+    "MATERIAL: " + df['MATERIAL'] + " (" + df['MATERIAL_DESCRIPTION'] + ")\n" +
+    "DESCRIPTION: " + df['DESCRIPTION'] + "\n" +
+    "LOGS: " + df['LONG_TEXT']
+)
+
+documents = df['combined_context'].tolist()
+
+# 2. Load Embedder (CPU)
+print("Loading Embedder...")
+embedder = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
+
+# 3. Create Index
+print("Creating embeddings...")
+embeddings = embedder.encode(documents, convert_to_numpy=True, show_progress_bar=False)
+index = faiss.IndexFlatL2(embeddings.shape[1])
+index.add(embeddings)
+
+print("✅ System Ready.")
+
+
+------------
+
+
+  def chat_with_quality_logs(user_question):
+    # 1. Search the index
+    query_vector = embedder.encode([user_question])
+    k = 2  # Retrieve top 2 most relevant logs
+    distances, indices = index.search(query_vector, k)
     
-    if (selectedTool === 'select') {
-      if (e.target === stage) {
-        setDiagramState(prev => ({ ...prev, selectedElement: null }));
-      }
-    } else if (['rectangle', 'circle', 'diamond'].includes(selectedTool)) {
-      const newBlock: Block = {
-        id: uuidv4(),
-        type: selectedTool as Block['type'],
-        position: {
-          x: pointerPosition.x,
-          y: pointerPosition.y,
-        },
-        size: { width: 100, height: 60 },
-        text: 'New Block',
-        style: {
-          fill: '#ffffff',
-          stroke: '#000000',
-          strokeWidth: 2,
-        },
-      };
+    # 2. Prepare context
+    retrieved_docs = [documents[i] for i in indices[0]]
+    context_str = "\n\n-----------------\n".join(retrieved_docs)
+    
+    # 3. Construct Prompt
+    prompt = f"""You are an expert Quality Assurance Analyst. 
+Analyze the following Quality Logs to answer the user's question.
+If the logs contain timestamps, specific names, or serial numbers, cite them in your answer.
 
-      setDiagramState(prev => ({
-        ...prev,
-        blocks: [...prev.blocks, newBlock],
-        selectedElement: newBlock.id,
-      }));
-    }
-  }, [selectedTool]);
+--- QUALITY LOGS START ---
+{context_str}
+--- QUALITY LOGS END ---
 
-  const handleBlockClick = useCallback((blockId: string) => {
-    if (selectedTool === 'connector') {
-      if (!connectingFrom) {
-        setConnectingFrom(blockId);
-      } else if (connectingFrom !== blockId) {
-        const newConnector: Connector = {
-          id: uuidv4(),
-          from: {
-            blockId: connectingFrom,
-            point: { x: 0, y: 0 },
-          },
-          to: {
-            blockId: blockId,
-            point: { x: 0, y: 0 },
-          },
-          points: [],
-          text: '',
-          style: {
-            stroke: '#000000',
-            strokeWidth: 2,
-          },
-        };
+User Question: {user_question}
 
-        setDiagramState(prev => ({
-          ...prev,
-          connectors: [...prev.connectors, newConnector],
-          selectedElement: newConnector.id,
-        }));
-        setConnectingFrom(null);
-      }
-    } else if (selectedTool === 'select') {
-      setDiagramState(prev => ({
-        ...prev,
-        selectedElement: blockId,
-      }));
-    }
-  }, [selectedTool, connectingFrom]);
+Answer:"""
 
-  const handleBlockDragMove = useCallback((id: string, position: Point) => {
-    setDiagramState(prev => ({
-      ...prev,
-      blocks: prev.blocks.map(block =>
-        block.id === id ? { ...block, position } : block
-      ),
-    }));
-  }, []);
+    # 4. Generate Answer (Standard HuggingFace generation)
+    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
+    
+    output = model.generate(
+        **inputs, 
+        max_new_tokens=512,
+        temperature=0.1,  # Low temp for factual answers
+        do_sample=False
+    )
+    
+    response = tokenizer.decode(output[0][inputs.input_ids.shape[1]:], skip_special_tokens=True)
+    
+    print(f"❓ Q: {user_question}")
+    print(f"💡 A: {response}\n")
+    print("="*60)
 
-  return (
-    <Stage
-      width={stageSize.width}
-      height={stageSize.height}
-      onClick={handleStageClick}
-      style={{ cursor: selectedTool === 'select' ? 'default' : 'crosshair' }}
-    >
-      <Layer>
-        {diagramState.blocks.map(block => (
-          <BlockShape
-            key={block.id}
-            block={block}
-            isSelected={diagramState.selectedElement === block.id}
-            onDragMove={handleBlockDragMove}
-            onClick={() => handleBlockClick(block.id)}
-          />
-        ))}
-        {diagramState.connectors.map(connector => {
-          const fromBlock = diagramState.blocks.find(b => b.id === connector.from.blockId);
-          const toBlock = diagramState.blocks.find(b => b.id === connector.to.blockId);
-          
-          if (!fromBlock || !toBlock) return null;
 
-          const points = [
-            { x: fromBlock.position.x + fromBlock.size.width / 2, y: fromBlock.position.y + fromBlock.size.height / 2 },
-            { x: toBlock.position.x + toBlock.size.width / 2, y: toBlock.position.y + toBlock.size.height / 2 },
-          ];
 
-          return (
-            <ConnectorLine
-              key={connector.id}
-              connector={{ ...connector, points }}
-              isSelected={diagramState.selectedElement === connector.id}
-              onClick={() => setDiagramState(prev => ({ ...prev, selectedElement: connector.id }))}
-            />
-          );
-        })}
-      </Layer>
-    </Stage>
-  );
+---------
 
-};
-};
+  # Test 1: Asking about a specific person's actions
+chat_with_quality_logs("What issue did Sarah Williams handle regarding the mounting block?")
+
+# Test 2: Asking about specific serial numbers (Extraction)
+chat_with_quality_logs("List the serial numbers for the parts that had missing paperwork.")
+
+# Test 3: Summarization of a problem
+chat_with_quality_logs("Why was the Cable Harness operator flagged?")
