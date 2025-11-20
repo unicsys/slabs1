@@ -1,1 +1,84 @@
+import pandas as pd
+import re
+
+# 1. Load your CSV
+# Make sure this file exists from the previous step
+df = pd.read_csv("quality_data.csv")
+
+# Combine columns into one text block for easier searching
+df['full_text'] = (
+    df['PROBLEM_CODE_TEXT'].fillna('') + " " + 
+    df['MATERIAL'].fillna('') + " " + 
+    df['MATERIAL_DESCRIPTION'].fillna('') + " " + 
+    df['LONG_TEXT'].fillna('')
+).str.lower()
+
+def chat_offline(user_question, top_n=5):
+    """
+    Finds rows containing words from the question and sends them to Gemma.
+    """
+    # --- STEP 1: KEYWORD SEARCH (Python only) ---
+    # Break question into unique keywords (ignore common words like 'the', 'is')
+    stop_words = {'the', 'is', 'at', 'which', 'on', 'and', 'a', 'an', 'of', 'to', 'in', 'for'}
+    keywords = set(re.findall(r'\w+', user_question.lower())) - stop_words
+    
+    if not keywords:
+        print("Please ask a more specific question.")
+        return
+
+    # Score every row: +1 point for every keyword found in that row
+    # This effectively ranks the most relevant rows
+    def score_row(row_text):
+        return sum(1 for word in keywords if word in row_text)
+
+    df['relevance_score'] = df['full_text'].apply(score_row)
+    
+    # Get top N rows where score > 0
+    results = df[df['relevance_score'] > 0].sort_values('relevance_score', ascending=False).head(top_n)
+    
+    if results.empty:
+        print("No relevant logs found containing those keywords.")
+        return
+
+    # --- STEP 2: BUILD PROMPT ---
+    # Format the raw data for Gemma
+    context_rows = []
+    for _, row in results.iterrows():
+        entry = (
+            f"Code: {row['PROBLEM_CODE_TEXT']}\n"
+            f"Material: {row['MATERIAL']} ({row['MATERIAL_DESCRIPTION']})\n"
+            f"Log: {row['LONG_TEXT']}"
+        )
+        context_rows.append(entry)
+    
+    context_block = "\n\n--- NEXT LOG ---\n".join(context_rows)
+    
+    prompt = f"""You are a Quality Assurance Assistant. 
+Answer the user's question based ONLY on the quality logs provided below.
+If the logs don't contain the answer, state that clearly.
+
+=== QUALITY LOGS ===
+{context_block}
+=== END LOGS ===
+
+User Question: {user_question}
+
+Answer:"""
+
+    # --- STEP 3: GENERATE (Using your existing model) ---
+    # (Using the 'model' and 'tokenizer' you loaded in the very first script)
+    input_ids = tokenizer(prompt, return_tensors="pt").to(model.device)
+    
+    output_ids = model.generate(
+        **input_ids,
+        max_new_tokens=512,
+        do_sample=False  # Deterministic for facts
+    )
+    
+    response = tokenizer.decode(output_ids[0][input_ids.input_ids.shape[1]:], skip_special_tokens=True)
+    
+    print(f"🔎 Found {len(results)} relevant logs based on keywords: {keywords}")
+    print(f"❓ Q: {user_question}")
+    print(f"💡 A: {response}\n")
+    print("-" * 50)
 
