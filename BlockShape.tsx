@@ -1,125 +1,218 @@
-import ollama
-import json
 import pandas as pd
+import json
 import os
-import io
+import re
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 
 # --- CONFIGURATION ---
-MODEL_NAME = "gemma3:12b-it-qat"  # Ensure this model is pulled in Ollama
+
+# REPLACE with the actual Hugging Face Model ID you want to use.
+# Since "gemma3" isn't out yet, I am using Gemma 2 (9B) as the example.
+# If you have a specific path to a local .pth/.safetensors model, put that path here.
+MODEL_ID = "google/gemma-2-9b-it" 
+
 INPUT_FILE = "quality_notification.csv"
-OUTPUT_FILE = "processed_quality_notification.csv"
-ROWS_TO_PROCESS = 5  # Batch size
+OUTPUT_FILE = "processed_multidimensional_results.csv"
+ROWS_TO_PROCESS = 5
+MAX_NEW_TOKENS = 2048 # Length of the output JSON
 
-# --- THE REFINED PROMPT LOGIC ---
-# This dictionary maps your specific "Logic/Triggers/Exclusions" into the prompt context.
-ANALYSIS_GROUPS = {
-    "Contextual_Scope": {
-        "role": "Business Analyst",
-        "instructions": "Determine if the text contains administrative or business context.",
-        "categories": {
-            "financial_info": "Logic: Monetary/Pricing. Triggers: Costs, invoices, profit/loss, currency.",
-            "schedule_mgmt_info": "Logic: Planning/Org. Triggers: Dates, org charts, signatures, workflows, approvals.",
-            "nomenclature_info": "Logic: Identification. Triggers: Part numbers, serial numbers (without specs), generic names.",
-            "general_description": "Logic: High-level summary. Triggers: Summaries without measurable parameters.",
-            "marketing_info": "Logic: Promotion. Triggers: Sales language, value props.",
-            "public_domain_info": "Logic: Open Source. Triggers: Public patents, open standards, conference papers.",
-            "applicability_info": "Logic: Utility. Triggers: Usage for design, development, production."
-        }
-    },
-    "Material_And_Process": {
-        "role": "Materials Engineer",
-        "instructions": "Extract material and manufacturing specifics. Rule: Action vs Property (Heating=Mfg, Hardness=Material).",
-        "categories": {
-            "material_specifications": "Logic: Intrinsic Properties. Triggers: Hardness, Yield Strength, Chemical Comp, Material Grade. Excludes: Processing steps.",
-            "manufacturing_parameters": "Logic: Process Inputs. Triggers: Temps (Oven), Times (Soak), Voltage, Feed Rates. Excludes: Resulting properties."
-        }
-    },
-    "Geometry_And_Design": {
-        "role": "Design Engineer",
-        "instructions": "Extract physical shape and interface requirements.",
-        "categories": {
-            "dimensional_specifications": "Logic: Physical Geometry. Triggers: Linear dimensions, Tolerances, GD&T. Excludes: Electrical/Software.",
-            "detailed_design_specs": "Logic: System Interfaces. Triggers: Electrical ratings, Pinouts, Software versions."
-        }
-    },
-    "Physics_And_Performance": {
-        "role": "Physics Analyst",
-        "instructions": "Extract forces and output goals. Rule: Force doing work = Performance. Force stressing part = Loads.",
-        "categories": {
-            "performance_parameters": "Logic: Active Output (The Goal). Triggers: Flow rates, RPM, Thrust, Lift. Rule: Ranges/Requirements.",
-            "loads_forces_torques": "Logic: Passive Constraints (The Endurance). Triggers: Burst pressure, G-force, Static torque. Rule: What it withstands."
-        }
-    },
-    "Verification_And_Resolution": {
-        "role": "Quality Engineer",
-        "instructions": "Extract testing, failure analysis, and resolution data. Rule: Specific Point Data = Test Data.",
-        "categories": {
-            "test_data_results": "Logic: Observed Results. Triggers: 'Measured at', 'Actual value', Pass/Fail. Rule: Historical events.",
-            "failure_analysis_details": "Logic: Root Cause. Triggers: Crack measurements, chemical analysis, fracture mechanics.",
-            "standards_citations": "Logic: Traceability. Triggers: Specific standards (ASTM, AMS) WITH section numbers.",
-            "corrective_actions": "Logic: Remediation. Triggers: Rework params, deviations, repair schemes."
-        }
-    }
+# --- MODEL LOADING ---
+print(f"Loading model: {MODEL_ID}...")
+
+# Quantization config (Optional: helps fit large models on smaller GPUs)
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16
+)
+
+try:
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_ID,
+        quantization_config=bnb_config, # Remove this line if you want full precision
+        device_map="auto",              # Automatically uses available GPUs
+        torch_dtype=torch.float16
+    )
+    print("Model loaded successfully on GPU.")
+except Exception as e:
+    print(f"Error loading model: {e}")
+    exit()
+
+# --- THE MASTER PROMPT ---
+MASTER_SYSTEM_PROMPT = """
+You are a Multi-Dimensional Semantic Analysis Engine. Your goal is to evaluate the input text against 17 independent dimensions simultaneously.
+
+### LOGIC & DEFINITIONS
+You must detect if the following categories exist based on their Triggers and Exclusions.
+
+#### GROUP A: CONTEXTUAL SCOPE
+1. financial_info:
+   - Logic: Monetary values, pricing, invoices, cost codes.
+   - Triggers: $, USD, invoice, profit/loss, price, cost.
+2. schedule_mgmt_info:
+   - Logic: Planning, dates, org hierarchy, approvals.
+   - Triggers: Schedules, dates, signatures, sign-offs, org charts.
+3. nomenclature_info:
+   - Logic: Identifiers without specs.
+   - Triggers: Part numbers, serial numbers, generic names (e.g., "Bracket").
+4. general_description:
+   - Logic: High-level summaries.
+   - Triggers: Summaries without parameters or technical depth.
+5. marketing_info:
+   - Logic: Sales/Promotion.
+   - Triggers: Value propositions, sales language.
+6. public_domain_info:
+   - Logic: Publicly available info.
+   - Triggers: Patents, open standards, conference papers.
+7. applicability_info:
+   - Logic: Utility context.
+   - Triggers: "Used for design", "production", "operation".
+
+#### GROUP B: TECHNICAL PARAMETERS
+8. material_specifications:
+   - Logic: Intrinsic properties of matter.
+   - Triggers: Hardness (HRC), Yield Strength, Chemical Comp.
+   - EXCLUSION: Processing steps (heating).
+9. manufacturing_parameters:
+   - Logic: Process inputs/settings.
+   - Triggers: Temps, Times, Voltage, Feed Rates.
+   - EXCLUSION: Resulting material properties.
+10. dimensional_specifications:
+    - Logic: Physical geometry.
+    - Triggers: Linear dimensions, Tolerances (±), GD&T.
+11. detailed_design_specs:
+    - Logic: System interfaces.
+    - Triggers: Electrical ratings, Pinouts, Software versions.
+12. performance_parameters:
+    - Logic: Active Output (Requirement).
+    - Triggers: Flow rates, RPM, Thrust (Required range).
+    - RULE: Describes what system *does*.
+13. loads_forces_torques:
+    - Logic: Passive Constraints.
+    - Triggers: Burst pressure, G-force limits, Structural loads.
+    - RULE: Describes what system *withstands*.
+14. test_data_results:
+    - Logic: Observed Results (History).
+    - Triggers: "Measured at", "Actual value", "Pass/Fail".
+    - RULE: Discrete points (e.g., "52 psi") vs Ranges.
+15. failure_analysis_details:
+    - Logic: Root Cause.
+    - Triggers: Crack measurements, chemical analysis, fracture mechanics.
+16. standards_citations:
+    - Logic: Traceability.
+    - Triggers: Specific standards (ASTM, AMS) WITH section numbers.
+17. corrective_actions:
+    - Logic: Remediation.
+    - Triggers: Rework params, repair schemes, deviations.
+
+### DISAMBIGUATION RULES (CRITICAL)
+1. **Action vs Property:** If text describes heating, it is Manufacturing. If text describes hardness, it is Material.
+2. **Requirement vs Result:** If text states a range (e.g., "50-60 psi"), it is Performance. If text states a discrete point (e.g., "52 psi"), it is Test Data.
+3. **Force Check:** Is force doing work? -> Performance. Is force stressing part? -> Loads. Is force applied by tool? -> Manufacturing.
+
+### OUTPUT FORMAT
+Return a single valid JSON object. Do not include markdown formatting or code blocks.
+Schema:
+{
+  "financial_info": { "exists": boolean, "evidence": "string" },
+  "schedule_mgmt_info": { "exists": boolean, "evidence": "string" },
+  "nomenclature_info": { "exists": boolean, "evidence": "string" },
+  "general_description": { "exists": boolean, "evidence": "string" },
+  "marketing_info": { "exists": boolean, "evidence": "string" },
+  "public_domain_info": { "exists": boolean, "evidence": "string" },
+  "applicability_info": { "exists": boolean, "evidence": "string" },
+  "material_specifications": { "exists": boolean, "evidence": "string" },
+  "manufacturing_parameters": { "exists": boolean, "evidence": "string" },
+  "dimensional_specifications": { "exists": boolean, "evidence": "string" },
+  "detailed_design_specs": { "exists": boolean, "evidence": "string" },
+  "performance_parameters": { "exists": boolean, "evidence": "string" },
+  "loads_forces_torques": { "exists": boolean, "evidence": "string" },
+  "test_data_results": { "exists": boolean, "evidence": "string" },
+  "failure_analysis_details": { "exists": boolean, "evidence": "string" },
+  "standards_citations": { "exists": boolean, "evidence": "string" },
+  "corrective_actions": { "exists": boolean, "evidence": "string" }
 }
-
-SYSTEM_PROMPT_TEMPLATE = """
-You are an expert {role}. Your task is to analyze the input text against specific definitions.
-
-GLOBAL DISAMBIGUATION RULES:
-1. Action vs Property: If text describes heating/tools, it is Manufacturing. If it describes inherent hardness/strength, it is Material.
-2. Requirement vs Result: If text states a range (e.g., 50-60 psi), it is a Parameter. If it states a discrete point (e.g., 52 psi), it is Test Data.
-
-Analyze the text for the following categories:
-{schema_desc}
-
-Return JSON format ONLY:
-{{
-  "category_name": {{ "exists": boolean, "evidence": "exact quote or empty string" }},
-  ...
-}}
 """
 
-def run_agents_on_text(text):
+def extract_json_from_response(text):
     """
-    Runs the text through the defined agent groups (Logic Dimensions).
+    Helper to extract the JSON object from the LLM's response
+    (handling cases where the model adds markdown or conversational text).
     """
-    merged_result = {}
-    
-    for group_name, config in ANALYSIS_GROUPS.items():
-        # Construct the specific schema description for this group
-        schema_desc = ""
-        for key, desc in config['categories'].items():
-            schema_desc += f"- {key}: {desc}\n"
-            
-        prompt = SYSTEM_PROMPT_TEMPLATE.format(
-            role=config['role'],
-            schema_desc=schema_desc
-        )
-        
-        try:
-            response = ollama.chat(
-                model=MODEL_NAME,
-                messages=[
-                    {"role": "system", "content": prompt}, 
-                    {"role": "user", "content": text}
-                ],
-                format="json",
-                options={"temperature": 0} # Keep it deterministic
-            )
-            
-            # Parse JSON
-            data = json.loads(response["message"]["content"])
-            merged_result.update(data)
-            
-        except Exception as e:
-            print(f"Error in group {group_name}: {e}")
-            # Fill with False on error
-            for k in config['categories']:
-                merged_result[k] = {"exists": False, "evidence": "Error during processing"}
-            
-    return merged_result
+    try:
+        # Try to parse the whole text first
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
 
-# --- DATA PREPARATION (Creating your fake CSV) ---
+    # Look for ```json blocks or just the first { and last }
+    try:
+        # Regex to find JSON block
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            json_str = match.group(0)
+            return json.loads(json_str)
+    except Exception:
+        pass
+    
+    return None
+
+def process_text_on_gpu(text):
+    """Runs the inference using the loaded Hugging Face model."""
+    
+    # Construct the conversation
+    messages = [
+        {"role": "user", "content": MASTER_SYSTEM_PROMPT + f"\n\nAnalyze this text:\n{text}"}
+    ]
+    
+    # Apply chat template (handles <start_of_turn> etc specific to model)
+    # If your model supports system roles natively, you can separate them.
+    # Most models work best merging system prompt into the first user turn as done above.
+    input_ids = tokenizer.apply_chat_template(
+        messages, 
+        return_tensors="pt", 
+        add_generation_prompt=True
+    ).to(model.device)
+
+    terminators = [
+        tokenizer.eos_token_id,
+        tokenizer.convert_tokens_to_ids("<end_of_turn>")
+    ]
+
+    # Generate
+    with torch.no_grad():
+        outputs = model.generate(
+            input_ids, 
+            max_new_tokens=MAX_NEW_TOKENS,
+            eos_token_id=terminators,
+            do_sample=False, # Deterministic (Temperature 0 equivalent)
+            temperature=None,
+            top_p=None
+        )
+
+    # Decode
+    response = tokenizer.decode(outputs[0][input_ids.shape[-1]:], skip_special_tokens=True)
+    
+    # Extract and Parse JSON
+    data = extract_json_from_response(response)
+    
+    if not data:
+        print(f"Warning: Could not parse JSON. Raw response: {response[:100]}...")
+        # Return empty structure on failure
+        return {k: {"exists": False, "evidence": "Error parsing JSON"} for k in [
+            "financial_info", "schedule_mgmt_info", "nomenclature_info", 
+            "general_description", "marketing_info", "public_domain_info", 
+            "applicability_info", "material_specifications", "manufacturing_parameters", 
+            "dimensional_specifications", "detailed_design_specs", "performance_parameters", 
+            "loads_forces_torques", "test_data_results", "failure_analysis_details", 
+            "standards_citations", "corrective_actions"
+        ]}
+        
+    return data
+
+# --- FAKE DATA GENERATION ---
 def create_fake_csv():
     csv_data = """PROBLEM_CODE_TEXT,DESCRIPTION,MATERIAL,MATERIAL_DESCRIPTION,LONG_TEXT
 Documentation/Paperwork,MISSING CERT PACKAGE,WHL-8844,WHEEL ASSEMBLY,"03/09/2024 09:12:24 GMT Patrick Jackson (C28091905) 03.09.2024 09:01:10 GMT John Smith (008008) Non-conforming Part Number(detail) including configuration = 157-301-888,,WHEEL ASSEMBLY MAIN GEAR. SUPPLIER WAS SUPPOSED TO INCLUDE CERTIFICATION PACKAGE PER PO REQUIREMENTS. PACKAGE NOT FOUND IN SHIPMENT. CONTACTED SUPPLIER AND THEY CONFIRMED THEY WILL SEND VIA EMAIL BY END OF DAY. Part Sn(s):,,WH-5521, WH-5522, WH-5523 Eng. Drawing:,,334-PLT-001 Rev C NOTE: PARTS ARE IN RECEIVING HOLD AREA UNTIL PAPERWORK ARRIVES. INSPECTOR CONFIRMED QUANTITY AND PART NUMBERS MATCH PO. 03/10/2024 08:15:33 GMT Patrick Jackson (C28091905) RECEIVED EMAIL WITH CERTIFICATION PACKAGE. MRB/QA REVIEWED AND APPROVED FOR RELEASE TO STOCK."
@@ -131,70 +224,57 @@ Administrative,PO REVISION NOT COMMUNICATED,STR-6655,STRUCTURAL BEAM,"05/20/2024
             f.write(csv_data)
         print("Created fake data file.")
 
-# --- MAIN PROCESSING LOOP ---
-
+# --- MAIN LOGIC ---
 def main():
     create_fake_csv()
     
     try:
         df = pd.read_csv(INPUT_FILE)
     except FileNotFoundError:
-        print("Input file not found.")
+        print("File not found.")
         return
 
+    # Check for existing output to append vs create new
     file_exists = os.path.isfile(OUTPUT_FILE)
     start_index = 0
-    
     if file_exists:
         existing_df = pd.read_csv(OUTPUT_FILE)
         start_index = len(existing_df)
         print(f"Resuming from row {start_index}...")
-    
-    chunk_to_process = df.iloc[start_index : start_index + ROWS_TO_PROCESS]
-    
-    if chunk_to_process.empty:
-        print("No new rows to process.")
+
+    chunk = df.iloc[start_index : start_index + ROWS_TO_PROCESS]
+    if chunk.empty:
+        print("No new rows.")
         return
 
-    for index, row in chunk_to_process.iterrows():
+    for index, row in chunk.iterrows():
         print(f"Processing Row {index} (ID: {row.get('PROBLEM_CODE_TEXT', 'Unknown')})...")
         
-        # Combine text for context
-        full_text = (
+        # Prepare Input Text
+        text_payload = (
             f"Material: {row.get('MATERIAL', '')}. "
-            f"Desc: {row.get('DESCRIPTION', '')}. "
-            f"Details: {row.get('LONG_TEXT', '')}"
+            f"Description: {row.get('DESCRIPTION', '')}. "
+            f"Log: {row.get('LONG_TEXT', '')}"
         )
-        
-        # Run the 17-Dimension Analysis
-        analysis_results = run_agents_on_text(full_text)
-        
-        # Build the result row
-        flat_row = row.to_dict() # Keep original data
-        
-        # Flatten the analysis results
-        for key, val in analysis_results.items():
-            if isinstance(val, dict):
-                # Check if 'exists' key is present; handle potential missing keys safely
-                flag = val.get('exists', False)
-                evidence = val.get('evidence', "")
-                
-                # Ensure we handle string "true"/"false" from LLM if it messes up types
-                if isinstance(flag, str):
-                    flag = True if flag.lower() == "true" else False
-                    
-                flat_row[f"{key}_FLAG"] = flag
-                flat_row[f"{key}_EVIDENCE"] = evidence
 
-        # Save immediately
+        # Run Analysis on GPU
+        analysis = process_text_on_gpu(text_payload)
+        
+        # Flatten Results
+        flat_row = row.to_dict()
+        
+        for key, val in analysis.items():
+            if isinstance(val, dict):
+                flat_row[f"{key}_FLAG"] = val.get('exists', False)
+                flat_row[f"{key}_EVIDENCE"] = val.get('evidence', "")
+        
+        # Save Incrementally
         results_df = pd.DataFrame([flat_row])
         write_header = not os.path.isfile(OUTPUT_FILE)
         results_df.to_csv(OUTPUT_FILE, mode='a', header=write_header, index=False)
-        
         print(f" -> Saved Row {index}")
 
-    print("\nBatch processing complete.")
+    print("Processing Complete.")
 
 if __name__ == "__main__":
     main()
-
